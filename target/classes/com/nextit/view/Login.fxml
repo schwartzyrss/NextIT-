@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+
+<VBox alignment="CENTER" spacing="16" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.nextit.controller.LoginController" styleClass="login-root">
+    <padding><Insets top="40" right="40" bottom="40" left="40"/></padding>
+    <Text text="NextIT" styleClass="app-title"/>
+    <Label text="Track Your Progress, Build Your Future" styleClass="app-subtitle"/>
+    <VBox spacing="8" styleClass="login-card" maxWidth="360">
+        <Label text="Username or Email"/>
+        <TextField fx:id="usernameField" promptText="Enter username or email"/>
+        <Label text="Password"/>
+        <PasswordField fx:id="passwordField" promptText="Enter password"/>
+        <Button text="Login" onAction="#handleLogin" maxWidth="Infinity" styleClass="primary-button"/>
+        <Label fx:id="errorLabel" styleClass="error-label"/>
+    </VBox>
+    <Region/>
+</VBox>

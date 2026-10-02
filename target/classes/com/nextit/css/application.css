@@ -1,0 +1,39 @@
+.root {
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+    -fx-background-color: #f4f6fa;
+}
+
+.login-root {
+    -fx-background-color: #f4f6fa;
+}
+
+.app-title {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-fill: #1f3b73;
+}
+
+.app-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #6b7280;
+}
+
+.login-card {
+    -fx-background-color: white;
+    -fx-padding: 24;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: #e5e7eb;
+}
+
+.primary-button {
+    -fx-background-color: #1f3b73;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-padding: 10 16;
+}
+
+.error-label {
+    -fx-text-fill: #b91c1c;
+}
