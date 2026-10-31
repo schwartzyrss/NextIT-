@@ -24,6 +24,11 @@ public class StudentSkillService {
     public List<StudentSkill> forStudent(int studentId) { return repo.findByStudentId(studentId); }
     public List<StudentSkill> all() { return repo.findAll(); }
 
+    public java.util.Optional<StudentSkill> find(int studentId, int skillId) {
+        if (studentId <= 0 || skillId <= 0) return java.util.Optional.empty();
+        return repo.findByStudentAndSkill(studentId, skillId);
+    }
+
     public void recordEvaluation(StudentSkill s, int instructorId) {
         if (s.getStudentId() <= 0 || studentRepo.findById(s.getStudentId()).isEmpty()) {
             throw new AppException("Select a valid student.");

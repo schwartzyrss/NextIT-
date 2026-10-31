@@ -324,8 +324,9 @@ public final class StudentViews {
         Ui.dialog(existing == null ? "Add Project" : "Edit Project", form).ifPresent(button -> {
             if (button != ButtonType.OK) return;
             guard(() -> {
-                Project target = existing == null ? new Project() : existing;
-                if (existing == null) target.setStudentId(studentId);
+                Project target = new Project();
+                target.setStudentId(existing == null ? Integer.valueOf(studentId) : existing.getStudentId());
+                if (existing != null) target.setProjectId(existing.getProjectId());
                 target.setProjectTitle(title.getText());
                 target.setProjectType(type.getValue());
                 target.setSubjectId(subject.getValue() == null ? null : subject.getValue().getSubjectId());
@@ -456,7 +457,8 @@ public final class StudentViews {
         Ui.dialog(existing == null ? "Add Achievement" : "Edit Achievement", form).ifPresent(button -> {
             if (button != ButtonType.OK) return;
             guard(() -> {
-                Achievement target = existing == null ? new Achievement() : existing;
+                Achievement target = new Achievement();
+                if (existing != null) target.setAchievementId(existing.getAchievementId());
                 target.setStudentId(studentId);
                 target.setTitle(title.getText());
                 target.setDescription(description.getText());
@@ -524,7 +526,8 @@ public final class StudentViews {
         Ui.dialog(existing == null ? "Add Certification" : "Edit Certification", form).ifPresent(button -> {
             if (button != ButtonType.OK) return;
             guard(() -> {
-                Certification target = existing == null ? new Certification() : existing;
+                Certification target = new Certification();
+                if (existing != null) target.setCertificationId(existing.getCertificationId());
                 target.setStudentId(studentId);
                 target.setCertificationName(name.getText());
                 target.setIssuingOrganization(issuer.getText());

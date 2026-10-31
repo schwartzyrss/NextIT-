@@ -141,12 +141,18 @@ public final class AdminViews {
         Ui.dialog(existing == null ? "Add User" : "Edit User", form).ifPresent(button -> {
             if (button != ButtonType.OK) return;
             guard(() -> {
-                User target = existing == null ? new User() : existing;
+                User target = new User();
+                if (existing != null) {
+                    target.setUserId(existing.getUserId());
+                    target.setPasswordHash(existing.getPasswordHash());
+                    target.setCreatedAt(existing.getCreatedAt());
+                    target.setUpdatedAt(existing.getUpdatedAt());
+                }
                 target.setUsername(username.getText());
                 target.setEmail(email.getText());
                 target.setFirstName(first.getText());
                 target.setLastName(last.getText());
-                target.setRole(role.getValue());
+                target.setRole(existing == null ? role.getValue() : existing.getRole());
                 if (existing == null) admin.createUser(target, password.getText());
                 else admin.updateUser(target);
                 refresh.run();
@@ -212,7 +218,8 @@ public final class AdminViews {
         Ui.dialog(existing == null ? "Add Subject" : "Edit Subject", form).ifPresent(button -> {
             if (button != ButtonType.OK) return;
             guard(() -> {
-                Subject target = existing == null ? new Subject() : existing;
+                Subject target = new Subject();
+                if (existing != null) target.setSubjectId(existing.getSubjectId());
                 target.setSubjectCode(code.getText());
                 target.setSubjectName(name.getText());
                 target.setUnits(Ui.parseDouble(units.getText(), "Units"));
@@ -305,6 +312,10 @@ public final class AdminViews {
             status.getSelectionModel().select(existing.getStatus());
         }
 
+        if (existing != null) {
+            student.setDisable(true);
+            subject.setDisable(true);
+        }
         Node form = Ui.form(new String[]{"Student", "Subject", "Academic year", "Semester", "Status"},
                 new Node[]{student, subject, year, semester, status});
         Ui.dialog(existing == null ? "Enroll Student" : "Edit Enrollment", form).ifPresent(button -> {
@@ -312,7 +323,8 @@ public final class AdminViews {
             guard(() -> {
                 if (student.getValue() == null) throw new AppException("Select a student.");
                 if (subject.getValue() == null) throw new AppException("Select a subject.");
-                Enrollment target = existing == null ? new Enrollment() : existing;
+                Enrollment target = new Enrollment();
+                if (existing != null) target.setEnrollmentId(existing.getEnrollmentId());
                 target.setStudentId(student.getValue().getStudentId());
                 target.setSubjectId(subject.getValue().getSubjectId());
                 target.setAcademicYear(year.getText());
@@ -374,12 +386,15 @@ public final class AdminViews {
             Ui.dialog("Edit Student Profile", form).ifPresent(button -> {
                 if (button != ButtonType.OK) return;
                 guard(() -> {
-                    selected.setStudentNumber(number.getText());
-                    selected.setProgram(program.getText());
-                    selected.setYearLevel(Ui.parseInt(year.getText(), "Year level"));
-                    selected.setSection(section.getText());
-                    selected.setEnrollmentStatus(status.getValue());
-                    admin.updateStudent(selected);
+                    Student target = new Student();
+                    target.setStudentId(selected.getStudentId());
+                    target.setUserId(selected.getUserId());
+                    target.setStudentNumber(number.getText());
+                    target.setProgram(program.getText());
+                    target.setYearLevel(Ui.parseInt(year.getText(), "Year level"));
+                    target.setSection(section.getText());
+                    target.setEnrollmentStatus(status.getValue());
+                    admin.updateStudent(target);
                     applyFilter.run();
                     Alerts.info("Student profile updated.");
                 });
@@ -429,10 +444,13 @@ public final class AdminViews {
             Ui.dialog("Edit Instructor Profile", form).ifPresent(button -> {
                 if (button != ButtonType.OK) return;
                 guard(() -> {
-                    selected.setEmployeeNumber(number.getText());
-                    selected.setDepartment(department.getText());
-                    selected.setSpecialization(specialization.getText());
-                    admin.updateInstructor(selected);
+                    Instructor target = new Instructor();
+                    target.setInstructorId(selected.getInstructorId());
+                    target.setUserId(selected.getUserId());
+                    target.setEmployeeNumber(number.getText());
+                    target.setDepartment(department.getText());
+                    target.setSpecialization(specialization.getText());
+                    admin.updateInstructor(target);
                     applyFilter.run();
                     Alerts.info("Instructor profile updated.");
                 });
@@ -484,12 +502,15 @@ public final class AdminViews {
             Ui.dialog("Edit Employer Profile", form).ifPresent(button -> {
                 if (button != ButtonType.OK) return;
                 guard(() -> {
-                    selected.setCompanyName(company.getText());
-                    selected.setIndustry(industry.getText());
-                    selected.setContactPerson(contact.getText());
-                    selected.setContactNumber(number.getText());
-                    selected.setAddress(address.getText());
-                    admin.updateEmployer(selected);
+                    Employer target = new Employer();
+                    target.setEmployerId(selected.getEmployerId());
+                    target.setUserId(selected.getUserId());
+                    target.setCompanyName(company.getText());
+                    target.setIndustry(industry.getText());
+                    target.setContactPerson(contact.getText());
+                    target.setContactNumber(number.getText());
+                    target.setAddress(address.getText());
+                    admin.updateEmployer(target);
                     applyFilter.run();
                     Alerts.info("Employer profile updated.");
                 });
@@ -652,6 +673,7 @@ public final class AdminViews {
             action.run();
         } catch (AppException e) {
             Alerts.error(e.getMessage());
+            org.slf4j.LoggerFactory.getLogger(AdminViews.class).error("Admin action failed", e);
         } catch (Exception e) {
             Alerts.error("Could not complete the operation. The record may be referenced elsewhere, or the database is unavailable.");
             org.slf4j.LoggerFactory.getLogger(AdminViews.class).error("Admin action failed", e);

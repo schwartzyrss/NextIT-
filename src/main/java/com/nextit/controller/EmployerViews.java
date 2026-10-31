@@ -119,8 +119,9 @@ public final class EmployerViews {
             if (selected == null) { Alerts.error("Select an opportunity to close."); return; }
             if (Ui.confirmed("Close \"" + selected.getTitle() + "\"? Students will no longer be able to apply.")) {
                 guard(() -> {
-                    selected.setStatus("Closed");
-                    career.updateOpportunity(selected, eid);
+                    JobOpportunity stored = career.opportunityById(selected.getOpportunityId());
+                    stored.setStatus("Closed");
+                    career.updateOpportunity(stored, eid);
                     applyFilter.run();
                 });
             }
@@ -159,7 +160,11 @@ public final class EmployerViews {
         Ui.dialog(existing == null ? "Add Opportunity" : "Edit Opportunity", form).ifPresent(button -> {
             if (button != ButtonType.OK) return;
             guard(() -> {
-                JobOpportunity target = existing == null ? new JobOpportunity() : existing;
+                JobOpportunity target = new JobOpportunity();
+                if (existing != null) {
+                    target.setOpportunityId(existing.getOpportunityId());
+                    target.setCreatedAt(existing.getCreatedAt());
+                }
                 target.setEmployerId(employerId);
                 target.setTitle(title.getText());
                 target.setOpportunityType(type.getValue());
@@ -299,7 +304,7 @@ public final class EmployerViews {
                 Alerts.error("You are not authorised to view this portfolio.");
                 return;
             }
-            guard(() -> PortfolioDetailsView.show(selected));
+            guard(() -> PortfolioDetailsView.show(selected, false));
         });
         Button refresh = new Button("Refresh");
         refresh.setOnAction(e -> filter.run());

@@ -311,9 +311,15 @@ public final class InstructorViews {
             if (button != ButtonType.OK) return;
             guard(() -> {
                 if (enrollment.getValue() == null) throw new AppException("Select a student enrollment.");
-                Grade grade = existing == null ? new Grade() : existing;
+                Grade grade = new Grade();
+                if (existing != null) {
+                    grade.setGradeId(existing.getGradeId());
+                    grade.setInstructorId(existing.getInstructorId());
+                    grade.setRecordedAt(existing.getRecordedAt());
+                } else {
+                    grade.setInstructorId(instructorId());
+                }
                 grade.setEnrollmentId(enrollment.getValue().getEnrollmentId());
-                grade.setInstructorId(instructorId());
                 grade.setActivityName(activity.getText());
                 grade.setActivityType(type.getValue());
                 grade.setScore(Ui.parseDouble(score.getText(), "Score"));
@@ -411,9 +417,14 @@ public final class InstructorViews {
             if (button != ButtonType.OK) return;
             guard(() -> {
                 if (enrollment.getValue() == null) throw new AppException("Select a student enrollment.");
-                Attendance attendance = existing == null ? new Attendance() : existing;
+                Attendance attendance = new Attendance();
+                if (existing != null) {
+                    attendance.setAttendanceId(existing.getAttendanceId());
+                    attendance.setRecordedBy(existing.getRecordedBy());
+                } else {
+                    attendance.setRecordedBy(instructorId());
+                }
                 attendance.setEnrollmentId(enrollment.getValue().getEnrollmentId());
-                attendance.setRecordedBy(instructorId());
                 attendance.setAttendanceDate(date.getValue());
                 attendance.setStatus(status.getValue());
                 attendance.setRemarks(remarks.getText());
@@ -469,6 +480,22 @@ public final class InstructorViews {
             level.getSelectionModel().selectFirst();
             TextField score = Ui.field("Assessment score (0-100)");
             TextField remarks = Ui.field("Remarks");
+            Runnable prefill = () -> {
+                if (student.getValue() == null || skill.getValue() == null) return;
+                java.util.Optional<StudentSkill> existing =
+                        skills.find(student.getValue().getStudentId(), skill.getValue().getSkillId());
+                if (existing.isPresent()) {
+                    level.getSelectionModel().select(existing.get().getProficiencyLevel());
+                    score.setText(scoreText(existing.get().getAssessmentScore()));
+                    remarks.setText(value(existing.get().getRemarks()));
+                } else {
+                    level.getSelectionModel().selectFirst();
+                    score.clear();
+                    remarks.clear();
+                }
+            };
+            student.valueProperty().addListener((obs, old, selected) -> guard(prefill));
+            skill.valueProperty().addListener((obs, old, selected) -> guard(prefill));
             Node form = Ui.form(new String[]{"Student", "Technical skill", "Proficiency", "Score", "Remarks"},
                     new Node[]{student, skill, level, score, remarks});
             Ui.dialog("Assess Technical Skill", form).ifPresent(button -> {

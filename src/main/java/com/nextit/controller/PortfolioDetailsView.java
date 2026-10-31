@@ -26,18 +26,39 @@ public final class PortfolioDetailsView {
     private PortfolioDetailsView() {}
 
     public static void show(Portfolio p) {
+        show(p, true);
+    }
+
+    /**
+     * @param includeAcademicSummary when false (employer-facing view) grade and
+     *                               attendance averages are omitted, because the
+     *                               role matrix does not grant employers access
+     *                               to a student's academic records.
+     */
+    public static void show(Portfolio p, boolean includeAcademicSummary) {
         int studentId = p.getStudentId();
         String studentName = directory.studentName(studentId);
 
-        Node content = Ui.form(
-                new String[]{"Student", "Headline", "Visibility", "Biography", "Career goal", "Technical skills",
-                        "Projects", "Achievements", "Certifications", "Academic highlights"},
-                new Node[]{new Label(studentName), new Label(value(p.getHeadline())),
-                        new Label(value(p.getVisibility())), wrapped(p.getBio()), wrapped(p.getCareerGoal()),
-                        wrapped(technicalSkills(studentId)), wrapped(projectList(studentId)),
-                        wrapped(achievementList(studentId)), wrapped(certificationList(studentId)),
-                        new Label(String.format("Average grade: %.2f%%   |   Attendance: %.2f%%",
-                                academic.averageForStudent(studentId), academic.attendanceRateForStudent(studentId)))});
+        Node content;
+        if (includeAcademicSummary) {
+            content = Ui.form(
+                    new String[]{"Student", "Headline", "Visibility", "Biography", "Career goal", "Technical skills",
+                            "Projects", "Achievements", "Certifications", "Academic highlights"},
+                    new Node[]{new Label(studentName), new Label(value(p.getHeadline())),
+                            new Label(value(p.getVisibility())), wrapped(p.getBio()), wrapped(p.getCareerGoal()),
+                            wrapped(technicalSkills(studentId)), wrapped(projectList(studentId)),
+                            wrapped(achievementList(studentId)), wrapped(certificationList(studentId)),
+                            new Label(String.format("Average grade: %.2f%%   |   Attendance: %.2f%%",
+                                    academic.averageForStudent(studentId), academic.attendanceRateForStudent(studentId)))});
+        } else {
+            content = Ui.form(
+                    new String[]{"Student", "Headline", "Visibility", "Biography", "Career goal", "Technical skills",
+                            "Projects", "Achievements", "Certifications"},
+                    new Node[]{new Label(studentName), new Label(value(p.getHeadline())),
+                            new Label(value(p.getVisibility())), wrapped(p.getBio()), wrapped(p.getCareerGoal()),
+                            wrapped(technicalSkills(studentId)), wrapped(projectList(studentId)),
+                            wrapped(achievementList(studentId)), wrapped(certificationList(studentId))});
+        }
 
         ScrollPane scroll = new ScrollPane(content);
         scroll.setFitToWidth(true);

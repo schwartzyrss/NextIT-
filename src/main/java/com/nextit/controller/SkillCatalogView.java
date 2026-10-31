@@ -79,7 +79,8 @@ public final class SkillCatalogView {
         Ui.dialog(existing == null ? "Add Technical Skill" : "Edit Technical Skill", form).ifPresent(button -> {
             if (button != ButtonType.OK) return;
             guard(() -> {
-                TechnicalSkill target = existing == null ? new TechnicalSkill() : existing;
+                TechnicalSkill target = new TechnicalSkill();
+                if (existing != null) target.setSkillId(existing.getSkillId());
                 target.setSkillName(name.getText());
                 target.setCategory(category.getText());
                 target.setDescription(description.getText());

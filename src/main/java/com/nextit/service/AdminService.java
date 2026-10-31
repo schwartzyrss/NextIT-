@@ -92,8 +92,8 @@ public class AdminService {
     public void saveSubject(Subject subject) {
         Validator.notBlank(subject.getSubjectCode(), "Subject code");
         Validator.notBlank(subject.getSubjectName(), "Subject name");
-        if (!Double.isFinite(subject.getUnits()) || subject.getUnits() <= 0) {
-            throw new AppException("Units must be a finite number greater than zero.");
+        if (!Double.isFinite(subject.getUnits()) || subject.getUnits() <= 0 || subject.getUnits() > 99.9) {
+            throw new AppException("Units must be a finite number between 0.1 and 99.9.");
         }
         subjectRepo.findAll().stream()
                 .filter(s -> s.getSubjectId() != subject.getSubjectId())

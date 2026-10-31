@@ -31,7 +31,11 @@ public class SystemService {
 
     public record DatabaseStatus(String url, String user, boolean connected,
                                  String product, String version, String error,
-                                 List<TableCount> tables) {}
+                                 List<TableCount> tables) {
+        public DatabaseStatus {
+            tables = List.copyOf(tables);
+        }
+    }
 
     public DatabaseStatus status() {
         String url = safeUrl(DatabaseConfig.url());
