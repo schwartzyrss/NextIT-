@@ -8,8 +8,6 @@ public class Application {
     private String status;
     private String remarks;
 
-    public Application() {}
-
     public int getApplicationId() { return applicationId; }
     public void setApplicationId(int applicationId) { this.applicationId = applicationId; }
 

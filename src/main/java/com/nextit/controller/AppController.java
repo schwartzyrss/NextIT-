@@ -6,9 +6,9 @@ import com.nextit.service.AuthenticationService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.Node;
-import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -114,7 +114,7 @@ public class AppController {
             LoginController controller = loader.getController();
             controller.setAuthenticationService(new AuthenticationService(new com.nextit.repository.JdbcUserRepository()));
             stage.setScene(scene);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             com.nextit.util.Alerts.error("Could not return to login.");
         }
     }

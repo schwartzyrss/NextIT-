@@ -9,8 +9,6 @@ public class Certification {
     private java.time.LocalDate expirationDate;
     private String credentialUrl;
 
-    public Certification() {}
-
     public int getCertificationId() { return certificationId; }
     public void setCertificationId(int certificationId) { this.certificationId = certificationId; }
 

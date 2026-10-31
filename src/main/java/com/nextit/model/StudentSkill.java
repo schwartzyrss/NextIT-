@@ -10,8 +10,6 @@ public class StudentSkill {
     private java.time.LocalDateTime assessedAt;
     private String remarks;
 
-    public StudentSkill() {}
-
     public int getStudentSkillId() { return studentSkillId; }
     public void setStudentSkillId(int studentSkillId) { this.studentSkillId = studentSkillId; }
 

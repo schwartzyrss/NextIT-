@@ -7,8 +7,6 @@ public class PortfolioAccess {
     private String accessStatus;
     private java.time.LocalDateTime grantedAt;
 
-    public PortfolioAccess() {}
-
     public int getAccessId() { return accessId; }
     public void setAccessId(int accessId) { this.accessId = accessId; }
 

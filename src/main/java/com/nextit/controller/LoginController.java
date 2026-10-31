@@ -22,6 +22,7 @@ public class LoginController {
     }
 
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod") // invoked reflectively via onAction="#handleLogin" in Login.fxml
     private void handleLogin() {
         try {
             User user = authenticationService.login(usernameField.getText(), passwordField.getText());
@@ -36,7 +37,7 @@ public class LoginController {
         } catch (AppException e) {
             com.nextit.security.Session.logout();
             errorLabel.setText(e.getMessage());
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             com.nextit.security.Session.logout();
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");

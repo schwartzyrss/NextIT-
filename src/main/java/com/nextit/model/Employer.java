@@ -9,8 +9,6 @@ public class Employer {
     private String contactNumber;
     private String address;
 
-    public Employer() {}
-
     public int getEmployerId() { return employerId; }
     public void setEmployerId(int employerId) { this.employerId = employerId; }
 

@@ -12,8 +12,6 @@ public class Grade {
     private String remarks;
     private java.time.LocalDateTime recordedAt;
 
-    public Grade() {}
-
     public int getGradeId() { return gradeId; }
     public void setGradeId(int gradeId) { this.gradeId = gradeId; }
 

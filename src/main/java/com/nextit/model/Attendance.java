@@ -8,8 +8,6 @@ public class Attendance {
     private String remarks;
     private int recordedBy;
 
-    public Attendance() {}
-
     public int getAttendanceId() { return attendanceId; }
     public void setAttendanceId(int attendanceId) { this.attendanceId = attendanceId; }
 

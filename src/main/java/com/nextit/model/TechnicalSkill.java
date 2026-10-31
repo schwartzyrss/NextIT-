@@ -6,8 +6,6 @@ public class TechnicalSkill {
     private String category;
     private String description;
 
-    public TechnicalSkill() {}
-
     public int getSkillId() { return skillId; }
     public void setSkillId(int skillId) { this.skillId = skillId; }
 

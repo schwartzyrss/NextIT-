@@ -200,7 +200,7 @@ public final class Ui {
             }
             return parsed;
         } catch (NumberFormatException e) {
-            throw new AppException(fieldName + " must be a number.");
+            throw new AppException(fieldName + " must be a number.", e);
         }
     }
 
@@ -208,7 +208,7 @@ public final class Ui {
         try {
             return Integer.parseInt(value == null ? "" : value.trim());
         } catch (NumberFormatException e) {
-            throw new AppException(fieldName + " must be a whole number.");
+            throw new AppException(fieldName + " must be a whole number.", e);
         }
     }
 

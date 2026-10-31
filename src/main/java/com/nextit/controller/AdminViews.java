@@ -14,13 +14,13 @@ import com.nextit.util.Ui;
 import javafx.collections.FXCollections;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
-public class AdminViews {
+public final class AdminViews {
 
     private static final AdminService admin = new AdminService();
     private static final AcademicService academic = new AcademicService();
@@ -30,6 +30,8 @@ public class AdminViews {
     private static final SkillService skills = new SkillService();
     private static final List<String> SEMESTERS = List.of("1st Semester", "2nd Semester", "Summer");
     private static final List<String> ENROLLMENT_STATUSES = List.of("Enrolled", "Dropped", "Completed");
+
+    private AdminViews() {}
 
     public static Node profile() {
         User account = profiles.account(com.nextit.security.Session.currentUser().getUserId());
@@ -66,23 +68,23 @@ public class AdminViews {
 
         TextField search = Ui.field("Search users...");
         Runnable applyFilter = () -> {
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(admin.users().stream().filter(u ->
-                    String.valueOf(u.getUsername()).toLowerCase().contains(q)
-                            || String.valueOf(u.getFullName()).toLowerCase().contains(q)
-                            || String.valueOf(u.getEmail()).toLowerCase().contains(q)
-                            || String.valueOf(u.getRole()).toLowerCase().contains(q)).toList()));
+                    String.valueOf(u.getUsername()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(u.getFullName()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(u.getEmail()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(u.getRole()).toLowerCase(Locale.ROOT).contains(q)).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> applyFilter.run());
 
         Button add = new Button("Add User");
         add.getStyleClass().add("primary-button");
-        add.setOnAction(e -> editUser(table, null, applyFilter));
+        add.setOnAction(e -> editUser(null, applyFilter));
         Button edit = new Button("Edit");
         edit.setOnAction(e -> {
             User selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) { Alerts.error("Select a user to edit."); return; }
-            editUser(table, selected, applyFilter);
+            editUser(selected, applyFilter);
         });
         Button delete = new Button("Delete");
         delete.setOnAction(e -> {
@@ -117,7 +119,7 @@ public class AdminViews {
                 Ui.toolbar(new Label("Search:"), search, add, edit, resetPassword, delete, refresh), table);
     }
 
-    private static void editUser(TableView<User> table, User existing, Runnable refresh) {
+    private static void editUser(User existing, Runnable refresh) {
         User u = existing == null ? new User() : existing;
         TextField username = Ui.field("Username");
         username.setText(u.getUsername());
@@ -127,7 +129,7 @@ public class AdminViews {
         first.setText(u.getFirstName());
         TextField last = Ui.field("Last name");
         last.setText(u.getLastName());
-        ComboBox<Role> role = Ui.combo(List.of(Role.values()), r -> r.name());
+        ComboBox<Role> role = Ui.combo(List.of(Role.values()), Enum::name);
         role.getSelectionModel().select(u.getRole() == null ? Role.STUDENT : u.getRole());
         role.setDisable(existing != null);
         PasswordField password = Ui.password("At least 6 characters");
@@ -164,22 +166,22 @@ public class AdminViews {
 
         TextField search = Ui.field("Search by code, name or description...");
         Runnable applyFilter = () -> {
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(admin.subjects().stream().filter(s ->
-                    String.valueOf(s.getSubjectCode()).toLowerCase().contains(q)
-                            || String.valueOf(s.getSubjectName()).toLowerCase().contains(q)
-                            || String.valueOf(s.getDescription()).toLowerCase().contains(q)).toList()));
+                    String.valueOf(s.getSubjectCode()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(s.getSubjectName()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(s.getDescription()).toLowerCase(Locale.ROOT).contains(q)).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> applyFilter.run());
 
         Button add = new Button("Add Subject");
         add.getStyleClass().add("primary-button");
-        add.setOnAction(e -> editSubject(table, null, applyFilter));
+        add.setOnAction(e -> editSubject(null, applyFilter));
         Button edit = new Button("Edit");
         edit.setOnAction(e -> {
             Subject selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) { Alerts.error("Select a subject to edit."); return; }
-            editSubject(table, selected, applyFilter);
+            editSubject(selected, applyFilter);
         });
         Button delete = new Button("Delete");
         delete.setOnAction(e -> {
@@ -195,7 +197,7 @@ public class AdminViews {
                 Ui.toolbar(new Label("Search:"), search, add, edit, delete, refresh), table);
     }
 
-    private static void editSubject(TableView<Subject> table, Subject existing, Runnable refresh) {
+    private static void editSubject(Subject existing, Runnable refresh) {
         Subject s = existing == null ? new Subject() : existing;
         TextField code = Ui.field("e.g. IT301");
         code.setText(s.getSubjectCode());
@@ -240,24 +242,24 @@ public class AdminViews {
             students.putAll(directory.studentNames());
             subjects.clear();
             subjects.putAll(directory.subjectNames());
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(academic.allEnrollments().stream().filter(e ->
-                    students.getOrDefault(e.getStudentId(), "").toLowerCase().contains(q)
-                            || subjects.getOrDefault(e.getSubjectId(), "").toLowerCase().contains(q)
-                            || String.valueOf(e.getAcademicYear()).toLowerCase().contains(q)
-                            || String.valueOf(e.getSemester()).toLowerCase().contains(q)
-                            || String.valueOf(e.getStatus()).toLowerCase().contains(q)).toList()));
+                    students.getOrDefault(e.getStudentId(), "").toLowerCase(Locale.ROOT).contains(q)
+                            || subjects.getOrDefault(e.getSubjectId(), "").toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(e.getAcademicYear()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(e.getSemester()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(e.getStatus()).toLowerCase(Locale.ROOT).contains(q)).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> applyFilter.run());
 
         Button add = new Button("Enroll Student");
         add.getStyleClass().add("primary-button");
-        add.setOnAction(e -> editEnrollment(table, null, applyFilter));
+        add.setOnAction(e -> editEnrollment(null, applyFilter));
         Button edit = new Button("Edit");
         edit.setOnAction(e -> {
             Enrollment selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) { Alerts.error("Select an enrollment to edit."); return; }
-            editEnrollment(table, selected, applyFilter);
+            editEnrollment(selected, applyFilter);
         });
         Button delete = new Button("Delete");
         delete.setOnAction(e -> {
@@ -276,7 +278,7 @@ public class AdminViews {
                 Ui.toolbar(new Label("Search:"), search, add, edit, delete, refresh), table);
     }
 
-    private static void editEnrollment(TableView<Enrollment> table, Enrollment existing, Runnable refresh) {
+    private static void editEnrollment(Enrollment existing, Runnable refresh) {
         List<Student> studentList = directory.students();
         List<Subject> subjectList = directory.subjects();
         Map<Integer, String> names = directory.studentNames();
@@ -344,12 +346,12 @@ public class AdminViews {
         Runnable applyFilter = () -> {
             names.clear();
             names.putAll(directory.studentNames());
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(admin.students().stream().filter(s ->
-                    names.getOrDefault(s.getStudentId(), "").toLowerCase().contains(q)
-                            || String.valueOf(s.getStudentNumber()).toLowerCase().contains(q)
-                            || String.valueOf(s.getProgram()).toLowerCase().contains(q)
-                            || String.valueOf(s.getSection()).toLowerCase().contains(q)).toList()));
+                    names.getOrDefault(s.getStudentId(), "").toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(s.getStudentNumber()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(s.getProgram()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(s.getSection()).toLowerCase(Locale.ROOT).contains(q)).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> applyFilter.run());
 
@@ -403,12 +405,12 @@ public class AdminViews {
         Runnable applyFilter = () -> {
             names.clear();
             names.putAll(directory.instructorNames());
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(admin.instructors().stream().filter(i ->
-                    names.getOrDefault(i.getInstructorId(), "").toLowerCase().contains(q)
-                            || String.valueOf(i.getEmployeeNumber()).toLowerCase().contains(q)
-                            || String.valueOf(i.getDepartment()).toLowerCase().contains(q)
-                            || String.valueOf(i.getSpecialization()).toLowerCase().contains(q)).toList()));
+                    names.getOrDefault(i.getInstructorId(), "").toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(i.getEmployeeNumber()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(i.getDepartment()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(i.getSpecialization()).toLowerCase(Locale.ROOT).contains(q)).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> applyFilter.run());
 
@@ -454,12 +456,12 @@ public class AdminViews {
 
         TextField search = Ui.field("Search by company, industry, contact or address...");
         Runnable applyFilter = () -> {
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(admin.employers().stream().filter(e ->
-                    String.valueOf(e.getCompanyName()).toLowerCase().contains(q)
-                            || String.valueOf(e.getIndustry()).toLowerCase().contains(q)
-                            || String.valueOf(e.getContactPerson()).toLowerCase().contains(q)
-                            || String.valueOf(e.getAddress()).toLowerCase().contains(q)).toList()));
+                    String.valueOf(e.getCompanyName()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(e.getIndustry()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(e.getContactPerson()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(e.getAddress()).toLowerCase(Locale.ROOT).contains(q)).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> applyFilter.run());
 
@@ -513,13 +515,13 @@ public class AdminViews {
         Runnable applyFilter = () -> {
             students.clear();
             students.putAll(directory.studentNames());
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             String visibility = filter.getValue();
             table.setItems(FXCollections.observableArrayList(portfolios.allPortfolios().stream()
                     .filter(p -> "All portfolios".equals(visibility) || visibility.equalsIgnoreCase(p.getVisibility()))
                     .filter(p -> q.isBlank()
-                            || students.getOrDefault(p.getStudentId(), "").toLowerCase().contains(q)
-                            || String.valueOf(p.getHeadline()).toLowerCase().contains(q))
+                            || students.getOrDefault(p.getStudentId(), "").toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(p.getHeadline()).toLowerCase(Locale.ROOT).contains(q))
                     .toList()));
         };
         search.textProperty().addListener((obs, old, value) -> applyFilter.run());
@@ -555,7 +557,7 @@ public class AdminViews {
         grant.setOnAction(e -> {
             Portfolio selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) { Alerts.error("Select a portfolio first."); return; }
-            ComboBox<Employer> employer = Ui.combo(directory.employers(), em -> em.getCompanyName());
+            ComboBox<Employer> employer = Ui.combo(directory.employers(), Employer::getCompanyName);
             Node form = Ui.form(new String[]{"Portfolio", "Employer"},
                     new Node[]{new Label(selected.getHeadline()), employer});
             Ui.dialog("Grant Portfolio Access", form).ifPresent(button -> {

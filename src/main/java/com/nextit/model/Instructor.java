@@ -7,8 +7,6 @@ public class Instructor {
     private String department;
     private String specialization;
 
-    public Instructor() {}
-
     public int getInstructorId() { return instructorId; }
     public void setInstructorId(int instructorId) { this.instructorId = instructorId; }
 

@@ -12,8 +12,6 @@ public class JobOpportunity {
     private String status;
     private java.time.LocalDateTime createdAt;
 
-    public JobOpportunity() {}
-
     public int getOpportunityId() { return opportunityId; }
     public void setOpportunityId(int opportunityId) { this.opportunityId = opportunityId; }
 

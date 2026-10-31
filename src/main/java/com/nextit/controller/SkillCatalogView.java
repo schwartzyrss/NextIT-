@@ -10,6 +10,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Shared technical skill catalogue screen. The permission matrix allows both
@@ -32,22 +33,22 @@ public final class SkillCatalogView {
 
         TextField search = Ui.field("Search by skill, category or description...");
         Runnable applyFilter = () -> {
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(skills.skills().stream().filter(s ->
-                    String.valueOf(s.getSkillName()).toLowerCase().contains(q)
-                            || String.valueOf(s.getCategory()).toLowerCase().contains(q)
-                            || String.valueOf(s.getDescription()).toLowerCase().contains(q)).toList()));
+                    String.valueOf(s.getSkillName()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(s.getCategory()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(s.getDescription()).toLowerCase(Locale.ROOT).contains(q)).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> applyFilter.run());
 
         Button add = new Button("Add Skill");
         add.getStyleClass().add("primary-button");
-        add.setOnAction(e -> edit(table, null, applyFilter));
+        add.setOnAction(e -> edit(null, applyFilter));
         Button edit = new Button("Edit");
         edit.setOnAction(e -> {
             TechnicalSkill selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) { Alerts.error("Select a skill to edit."); return; }
-            edit(table, selected, applyFilter);
+            edit(selected, applyFilter);
         });
         Button delete = new Button("Delete");
         delete.setOnAction(e -> {
@@ -67,7 +68,7 @@ public final class SkillCatalogView {
                 Ui.toolbar(new Label("Search:"), search, add, edit, delete, refresh), table);
     }
 
-    private static void edit(TableView<TechnicalSkill> table, TechnicalSkill existing, Runnable refresh) {
+    private static void edit(TechnicalSkill existing, Runnable refresh) {
         TextField name = Ui.field("Skill name");
         name.setText(existing == null ? "" : existing.getSkillName());
         TextField category = Ui.field("Category");

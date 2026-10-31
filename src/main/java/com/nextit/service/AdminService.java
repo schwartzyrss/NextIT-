@@ -15,6 +15,7 @@ import com.nextit.repository.JdbcUserRepository;
 import com.nextit.util.Validator;
 
 import java.util.List;
+import java.util.Locale;
 
 public class AdminService {
 
@@ -99,7 +100,7 @@ public class AdminService {
                 .filter(s -> s.getSubjectCode().equalsIgnoreCase(subject.getSubjectCode().trim()))
                 .findAny()
                 .ifPresent(s -> { throw new AppException("That subject code already exists."); });
-        subject.setSubjectCode(subject.getSubjectCode().trim().toUpperCase());
+        subject.setSubjectCode(subject.getSubjectCode().trim().toUpperCase(Locale.ROOT));
         if (subject.getSubjectId() > 0) subjectRepo.update(subject);
         else subjectRepo.save(subject);
     }

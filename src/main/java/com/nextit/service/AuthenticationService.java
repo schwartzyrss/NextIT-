@@ -44,7 +44,7 @@ public class AuthenticationService {
         if (hash == null || plain == null) return false;
         try {
             return BCrypt.checkpw(plain, hash);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException ignored) {
             // A malformed stored hash should fail authentication rather than crash.
             return false;
         }

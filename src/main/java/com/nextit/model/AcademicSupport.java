@@ -12,8 +12,6 @@ public class AcademicSupport {
     private String outcome;
     private String remarks;
 
-    public AcademicSupport() {}
-
     public int getSupportId() { return supportId; }
     public void setSupportId(int supportId) { this.supportId = supportId; }
 

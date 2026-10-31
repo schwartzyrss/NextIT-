@@ -7,8 +7,6 @@ public class Subject {
     private double units;
     private String description;
 
-    public Subject() {}
-
     public int getSubjectId() { return subjectId; }
     public void setSubjectId(int subjectId) { this.subjectId = subjectId; }
 

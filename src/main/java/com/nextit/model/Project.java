@@ -13,8 +13,6 @@ public class Project {
     private java.time.LocalDate projectDate;
     private String status;
 
-    public Project() {}
-
     public int getProjectId() { return projectId; }
     public void setProjectId(int projectId) { this.projectId = projectId; }
 

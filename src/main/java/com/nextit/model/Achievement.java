@@ -9,8 +9,6 @@ public class Achievement {
     private java.time.LocalDate achievementDate;
     private String verificationUrl;
 
-    public Achievement() {}
-
     public int getAchievementId() { return achievementId; }
     public void setAchievementId(int achievementId) { this.achievementId = achievementId; }
 

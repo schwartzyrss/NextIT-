@@ -10,8 +10,6 @@ public class Portfolio {
     private java.time.LocalDateTime createdAt;
     private java.time.LocalDateTime updatedAt;
 
-    public Portfolio() {}
-
     public int getPortfolioId() { return portfolioId; }
     public void setPortfolioId(int portfolioId) { this.portfolioId = portfolioId; }
 

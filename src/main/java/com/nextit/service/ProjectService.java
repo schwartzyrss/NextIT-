@@ -140,6 +140,6 @@ public class ProjectService {
         if (a != null) { sum += a; n++; }
         if (b != null) { sum += b; n++; }
         if (c != null) { sum += c; n++; }
-        return n == 0 ? null : Math.round((sum / n) * 100.0) / 100.0;
+        return n == 0 ? null : Math.round(sum / n * 100.0) / 100.0;
     }
 }

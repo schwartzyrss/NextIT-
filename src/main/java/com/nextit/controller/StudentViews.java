@@ -15,9 +15,10 @@ import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
-public class StudentViews {
+public final class StudentViews {
 
     private static final AcademicService academic = new AcademicService();
     private static final ProjectService projects = new ProjectService();
@@ -28,6 +29,8 @@ public class StudentViews {
     private static final SupportService support = new SupportService();
     private static final DirectoryService directory = new DirectoryService();
     private static final ProfileService profiles = new ProfileService();
+
+    private StudentViews() {}
 
     private static int studentId() {
         return academic.studentIdForUser(Session.currentUser().getUserId());
@@ -177,11 +180,11 @@ public class StudentViews {
             skillNames.putAll(directory.skillNames());
             instructors.clear();
             instructors.putAll(directory.instructorNames());
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(skillService.forStudent(sid).stream().filter(s ->
-                    String.valueOf(skillNames.getOrDefault(s.getSkillId(), "")).toLowerCase().contains(q)
-                            || String.valueOf(s.getProficiencyLevel()).toLowerCase().contains(q)
-                            || String.valueOf(s.getRemarks()).toLowerCase().contains(q)).toList()));
+                    String.valueOf(skillNames.getOrDefault(s.getSkillId(), "")).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(s.getProficiencyLevel()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(s.getRemarks()).toLowerCase(Locale.ROOT).contains(q)).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> filter.run());
         Button refresh = new Button("Refresh");
@@ -209,18 +212,18 @@ public class StudentViews {
         Runnable applyFilter = () -> {
             subjects.clear();
             subjects.putAll(directory.subjectNames());
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(projects.projectsForStudent(sid).stream().filter(p ->
-                    String.valueOf(p.getProjectTitle()).toLowerCase().contains(q)
-                            || String.valueOf(p.getProjectType()).toLowerCase().contains(q)
-                            || String.valueOf(p.getTechnologiesUsed()).toLowerCase().contains(q)
-                            || String.valueOf(p.getStatus()).toLowerCase().contains(q)).toList()));
+                    String.valueOf(p.getProjectTitle()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(p.getProjectType()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(p.getTechnologiesUsed()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(p.getStatus()).toLowerCase(Locale.ROOT).contains(q)).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> applyFilter.run());
 
         Button add = new Button("Add Project");
         add.getStyleClass().add("primary-button");
-        add.setOnAction(e -> editProject(table, sid, null, applyFilter));
+        add.setOnAction(e -> editProject(sid, null, applyFilter));
         Button edit = new Button("Edit");
         edit.setOnAction(e -> {
             Project selected = table.getSelectionModel().getSelectedItem();
@@ -229,7 +232,7 @@ public class StudentViews {
                 Alerts.error("Only the project owner can edit this project.");
                 return;
             }
-            editProject(table, sid, selected, applyFilter);
+            editProject(sid, selected, applyFilter);
         });
         Button delete = new Button("Delete");
         delete.setOnAction(e -> {
@@ -291,7 +294,7 @@ public class StudentViews {
         Ui.viewDialog("Project - " + p.getProjectTitle(), form);
     }
 
-    private static void editProject(TableView<Project> table, int studentId, Project existing, Runnable refresh) {
+    private static void editProject(int studentId, Project existing, Runnable refresh) {
         Project p = existing == null ? new Project() : existing;
         List<Subject> subjectList = directory.subjects();
         TextField title = Ui.field("Project title");
@@ -407,23 +410,23 @@ public class StudentViews {
         Ui.addColumn(table, "Verification", Achievement::getVerificationUrl);
         TextField search = Ui.field("Search by title, organization or description...");
         Runnable refresh = () -> {
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(studentService.achievementsFor(sid).stream().filter(a ->
-                    String.valueOf(a.getTitle()).toLowerCase().contains(q)
-                            || String.valueOf(a.getOrganization()).toLowerCase().contains(q)
-                            || String.valueOf(a.getDescription()).toLowerCase().contains(q)).toList()));
+                    String.valueOf(a.getTitle()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(a.getOrganization()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(a.getDescription()).toLowerCase(Locale.ROOT).contains(q)).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> refresh.run());
         refresh.run();
 
         Button add = new Button("Add Achievement");
         add.getStyleClass().add("primary-button");
-        add.setOnAction(e -> editAchievement(table, sid, null, refresh));
+        add.setOnAction(e -> editAchievement(sid, null, refresh));
         Button edit = new Button("Edit");
         edit.setOnAction(e -> {
             Achievement selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) { Alerts.error("Select an achievement to edit."); return; }
-            editAchievement(table, sid, selected, refresh);
+            editAchievement(sid, selected, refresh);
         });
         Button delete = new Button("Delete");
         delete.setOnAction(e -> {
@@ -437,7 +440,7 @@ public class StudentViews {
                 Ui.toolbar(new Label("Search:"), search, add, edit, delete, refreshButton(refresh)), table);
     }
 
-    private static void editAchievement(TableView<Achievement> table, int studentId, Achievement existing, Runnable refresh) {
+    private static void editAchievement(int studentId, Achievement existing, Runnable refresh) {
         Achievement a = existing == null ? new Achievement() : existing;
         TextField title = Ui.field("Title");
         title.setText(a.getTitle());
@@ -477,10 +480,10 @@ public class StudentViews {
         Ui.addColumn(table, "Credential", Certification::getCredentialUrl);
         TextField search = Ui.field("Search by certification or issuer...");
         Runnable refresh = () -> {
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(studentService.certificationsFor(sid).stream().filter(c ->
-                    String.valueOf(c.getCertificationName()).toLowerCase().contains(q)
-                            || String.valueOf(c.getIssuingOrganization()).toLowerCase().contains(q)).toList()));
+                    String.valueOf(c.getCertificationName()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(c.getIssuingOrganization()).toLowerCase(Locale.ROOT).contains(q)).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> refresh.run());
         refresh.run();
@@ -552,7 +555,7 @@ public class StudentViews {
 
         Label visibility = new Label(loaded.getVisibility() == null ? "Private" : loaded.getVisibility());
         Tab previewTab = tab("Preview", portfolioPreview(sid, loaded));
-        Tab accessTab = tab("Access", portfolioAccess(sid, loaded));
+        Tab accessTab = tab("Access", portfolioAccess(loaded));
 
         Button save = new Button("Save Portfolio");
         save.getStyleClass().add("primary-button");
@@ -570,7 +573,7 @@ public class StudentViews {
             portfolio.save(loaded);
             visibility.setText(loaded.getVisibility());
             previewTab.setContent(portfolioPreview(sid, loaded));
-            accessTab.setContent(portfolioAccess(sid, loaded));
+            accessTab.setContent(portfolioAccess(loaded));
             Alerts.info("Portfolio saved. " + ("Pending".equals(loaded.getVisibility())
                     ? "It is now awaiting administrator approval." : "Current visibility: " + loaded.getVisibility() + "."));
         }));
@@ -655,7 +658,7 @@ public class StudentViews {
         return button;
     }
 
-    private static Node portfolioAccess(int studentId, Portfolio p) {
+    private static Node portfolioAccess(Portfolio p) {
         TableView<PortfolioAccess> table = Ui.table();
         Map<Integer, String> employers = directory.employerNames();
         Ui.addColumn(table, "Employer", a -> employers.getOrDefault(a.getEmployerId(), "Employer #" + a.getEmployerId()));
@@ -684,13 +687,13 @@ public class StudentViews {
         ComboBox<String> type = Ui.combo(List.of("All types", "Internship", "Employment"), s -> s);
         type.getSelectionModel().selectFirst();
         Runnable filter = () -> {
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             String t = type.getValue();
             table.setItems(FXCollections.observableArrayList(career.openOpportunities().stream().filter(o ->
                     (q.isBlank()
-                            || String.valueOf(o.getTitle()).toLowerCase().contains(q)
-                            || String.valueOf(o.getRequiredSkills()).toLowerCase().contains(q)
-                            || String.valueOf(o.getLocation()).toLowerCase().contains(q))
+                            || String.valueOf(o.getTitle()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(o.getRequiredSkills()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(o.getLocation()).toLowerCase(Locale.ROOT).contains(q))
                     && ("All types".equals(t) || String.valueOf(o.getOpportunityType()).equalsIgnoreCase(t))).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> filter.run());
@@ -766,14 +769,14 @@ public class StudentViews {
             });
             employers.clear();
             employers.putAll(directory.employerNames());
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             String selectedStatus = status.getValue();
             table.setItems(FXCollections.observableArrayList(career.applicationsByStudent(sid).stream().filter(a ->
                     ("All statuses".equals(selectedStatus) || selectedStatus.equalsIgnoreCase(a.getStatus()))
                             && (q.isBlank()
-                            || String.valueOf(opportunities.getOrDefault(a.getOpportunityId(), "")).toLowerCase().contains(q)
-                            || companyFor(a, byId, employers).toLowerCase().contains(q)
-                            || String.valueOf(a.getRemarks()).toLowerCase().contains(q))).toList()));
+                            || String.valueOf(opportunities.getOrDefault(a.getOpportunityId(), "")).toLowerCase(Locale.ROOT).contains(q)
+                            || companyFor(a, byId, employers).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(a.getRemarks()).toLowerCase(Locale.ROOT).contains(q))).toList()));
         };
         filter.run();
         search.textProperty().addListener((obs, old, value) -> filter.run());

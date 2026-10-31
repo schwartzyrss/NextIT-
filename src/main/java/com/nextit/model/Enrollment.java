@@ -8,8 +8,6 @@ public class Enrollment {
     private String semester;
     private String status;
 
-    public Enrollment() {}
-
     public int getEnrollmentId() { return enrollmentId; }
     public void setEnrollmentId(int enrollmentId) { this.enrollmentId = enrollmentId; }
 

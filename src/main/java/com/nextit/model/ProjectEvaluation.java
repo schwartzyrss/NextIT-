@@ -12,8 +12,6 @@ public class ProjectEvaluation {
     private String feedback;
     private java.time.LocalDateTime evaluatedAt;
 
-    public ProjectEvaluation() {}
-
     public int getEvaluationId() { return evaluationId; }
     public void setEvaluationId(int evaluationId) { this.evaluationId = evaluationId; }
 

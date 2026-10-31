@@ -9,8 +9,6 @@ public class Student {
     private String section;
     private String enrollmentStatus;
 
-    public Student() {}
-
     public int getStudentId() { return studentId; }
     public void setStudentId(int studentId) { this.studentId = studentId; }
 

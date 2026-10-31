@@ -12,10 +12,11 @@ import javafx.scene.control.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class EmployerViews {
+public final class EmployerViews {
 
     private static final CareerService career = new CareerService();
     private static final PortfolioService portfolios = new PortfolioService();
@@ -24,6 +25,8 @@ public class EmployerViews {
     private static final ProjectService projects = new ProjectService();
     private static final DirectoryService directory = new DirectoryService();
     private static final ProfileService profiles = new ProfileService();
+
+    private EmployerViews() {}
 
     private static int employerId() { return career.employerIdForUser(Session.currentUser().getUserId()); }
 
@@ -93,22 +96,22 @@ public class EmployerViews {
 
         TextField search = Ui.field("Search your opportunities...");
         Runnable applyFilter = () -> {
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(career.opportunitiesForEmployer(eid).stream().filter(o ->
-                    String.valueOf(o.getTitle()).toLowerCase().contains(q)
-                            || String.valueOf(o.getLocation()).toLowerCase().contains(q)
-                            || String.valueOf(o.getRequiredSkills()).toLowerCase().contains(q)).toList()));
+                    String.valueOf(o.getTitle()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(o.getLocation()).toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(o.getRequiredSkills()).toLowerCase(Locale.ROOT).contains(q)).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> applyFilter.run());
 
         Button add = new Button("Add Opportunity");
         add.getStyleClass().add("primary-button");
-        add.setOnAction(e -> editOpportunity(table, eid, null, applyFilter));
+        add.setOnAction(e -> editOpportunity(eid, null, applyFilter));
         Button edit = new Button("Edit");
         edit.setOnAction(e -> {
             JobOpportunity selected = table.getSelectionModel().getSelectedItem();
             if (selected == null) { Alerts.error("Select an opportunity to edit."); return; }
-            editOpportunity(table, eid, selected, applyFilter);
+            editOpportunity(eid, selected, applyFilter);
         });
         Button close = new Button("Close");
         close.setOnAction(e -> {
@@ -136,7 +139,7 @@ public class EmployerViews {
                 Ui.toolbar(new Label("Search:"), search, add, edit, close, delete, refresh), table);
     }
 
-    private static void editOpportunity(TableView<JobOpportunity> table, int employerId, JobOpportunity existing, Runnable refresh) {
+    private static void editOpportunity(int employerId, JobOpportunity existing, Runnable refresh) {
         JobOpportunity o = existing == null ? new JobOpportunity() : existing;
         TextField title = Ui.field("Opportunity title");
         title.setText(o.getTitle());
@@ -195,13 +198,13 @@ public class EmployerViews {
             studentsById.clear();
             studentsById.putAll(directory.studentNames());
             String value = statusFilter.getValue();
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             table.setItems(FXCollections.observableArrayList(career.applicationsForEmployer(eid).stream()
                     .filter(a -> "All statuses".equals(value) || value.equalsIgnoreCase(a.getStatus()))
                     .filter(a -> q.isBlank()
-                            || studentsById.getOrDefault(a.getStudentId(), "").toLowerCase().contains(q)
-                            || opportunityTitles.getOrDefault(a.getOpportunityId(), "").toLowerCase().contains(q)
-                            || String.valueOf(a.getRemarks()).toLowerCase().contains(q))
+                            || studentsById.getOrDefault(a.getStudentId(), "").toLowerCase(Locale.ROOT).contains(q)
+                            || opportunityTitles.getOrDefault(a.getOpportunityId(), "").toLowerCase(Locale.ROOT).contains(q)
+                            || String.valueOf(a.getRemarks()).toLowerCase(Locale.ROOT).contains(q))
                     .toList()));
         };
         statusFilter.valueProperty().addListener((obs, old, value) -> filter.run());
@@ -271,7 +274,7 @@ public class EmployerViews {
             refreshChoices(categoryFilter, "All skill categories",
                     allSkills.stream().map(TechnicalSkill::getCategory)
                             .filter(c -> c != null && !c.isBlank()).distinct().sorted().toList());
-            String q = search.getText() == null ? "" : search.getText().toLowerCase();
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
             String skill = skillFilter.getValue();
             String category = categoryFilter.getValue();
             // Re-read access on every filter so newly granted portfolios appear
@@ -343,7 +346,7 @@ public class EmployerViews {
                 .append(value(a.getOrganization())).append(' '));
         students.certificationsFor(studentId).forEach(c -> text.append(value(c.getCertificationName())).append(' ')
                 .append(value(c.getIssuingOrganization())).append(' '));
-        return text.toString().toLowerCase();
+        return text.toString().toLowerCase(Locale.ROOT);
     }
 
     private static String value(String text) { return text == null ? "" : text; }

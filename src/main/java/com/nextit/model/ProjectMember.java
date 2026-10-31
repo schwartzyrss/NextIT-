@@ -7,8 +7,6 @@ public class ProjectMember {
     private String role;
     private String contribution;
 
-    public ProjectMember() {}
-
     public int getProjectMemberId() { return projectMemberId; }
     public void setProjectMemberId(int projectMemberId) { this.projectMemberId = projectMemberId; }
 
