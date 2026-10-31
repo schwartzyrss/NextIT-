@@ -155,4 +155,4 @@ mvn clean package
 
 The automated tests cover password hashing, validation, session behaviour, grade and attendance calculations, and project evaluation averages. Database-backed workflows require a running MySQL instance.
 
-The read-only schema integration tests check the `Users` columns and constraints and documented foreign keys against a MySQL database. To run them, set `NEXTIT_TEST_DB_URL` to a separate test database initialized with `database/schema.sql`; optionally set `NEXTIT_TEST_DB_USER` and `NEXTIT_TEST_DB_PASSWORD`. Without a MySQL test URL, these integration tests are skipped.
+The read-only schema integration tests check every documented table's columns, constraints, unique keys, and foreign-key relationships against a MySQL database. To run them, set `NEXTIT_TEST_DB_URL` to a separate test database initialized with `database/schema.sql`; optionally set `NEXTIT_TEST_DB_USER` and `NEXTIT_TEST_DB_PASSWORD`. Without a MySQL test URL, these integration tests are skipped.
