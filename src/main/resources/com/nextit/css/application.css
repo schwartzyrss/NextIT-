@@ -81,6 +81,24 @@
     -fx-text-fill: #6b7280;
 }
 
+.chart-card {
+    -fx-background-color: white;
+    -fx-padding: 16;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: #e5e7eb;
+}
+
+.chart-card > .chart {
+    -fx-background-color: transparent;
+    -fx-padding: 4;
+}
+
+.empty-state {
+    -fx-text-fill: #6b7280;
+    -fx-font-style: italic;
+}
+
 .toolbar {
     -fx-padding: 4 0 4 0;
 }
@@ -93,6 +111,22 @@
     -fx-background-color: #ffffff;
     -fx-border-color: #e5e7eb;
     -fx-border-width: 0 1 0 0;
+}
+
+.sidebar-scroll {
+    -fx-background-color: #ffffff;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-color: #e5e7eb;
+    -fx-border-width: 0 1 0 0;
+}
+
+.sidebar-scroll > .viewport {
+    -fx-background-color: #ffffff;
+}
+
+.sidebar-scroll .scroll-bar:vertical {
+    -fx-background-color: transparent;
 }
 
 .sidebar .button {

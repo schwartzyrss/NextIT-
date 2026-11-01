@@ -31,7 +31,8 @@ public class JdbcPortfolioRepository {
         List<Portfolio> list = new ArrayList<>();
         try (Connection c = DatabaseConfig.getConnection();
              Statement st = c.createStatement();
-             ResultSet rs = st.executeQuery("SELECT * FROM portfolios WHERE visibility='Approved'")) {
+             ResultSet rs = st.executeQuery(
+                     "SELECT * FROM portfolios WHERE visibility IN ('Approved', 'Public') ORDER BY portfolio_id")) {
             while (rs.next()) list.add(map(rs));
             return list;
         } catch (SQLException e) { throw new AppException("Failed to load portfolios", e); }

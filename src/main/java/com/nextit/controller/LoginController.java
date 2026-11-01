@@ -5,14 +5,21 @@ import com.nextit.model.User;
 import com.nextit.service.AuthenticationService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LoginController {
 
+    private static final Logger log = LoggerFactory.getLogger(LoginController.class);
+
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
+    @FXML private TextField visiblePasswordField;
+    @FXML private CheckBox showPasswordCheck;
     @FXML private Label errorLabel;
 
     private AuthenticationService authenticationService;
@@ -22,10 +29,37 @@ public class LoginController {
     }
 
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod") // invoked reflectively via onAction="#togglePassword" in Login.fxml
+    private void togglePassword() {
+        boolean show = showPasswordCheck.isSelected();
+        if (show) {
+            visiblePasswordField.setText(passwordField.getText());
+            visiblePasswordField.setManaged(true);
+            visiblePasswordField.setVisible(true);
+            passwordField.setManaged(false);
+            passwordField.setVisible(false);
+            visiblePasswordField.requestFocus();
+            visiblePasswordField.positionCaret(visiblePasswordField.getText().length());
+        } else {
+            passwordField.setText(visiblePasswordField.getText());
+            passwordField.setManaged(true);
+            passwordField.setVisible(true);
+            visiblePasswordField.setManaged(false);
+            visiblePasswordField.setVisible(false);
+            passwordField.requestFocus();
+            passwordField.positionCaret(passwordField.getText().length());
+        }
+    }
+
+    private String enteredPassword() {
+        return showPasswordCheck.isSelected() ? visiblePasswordField.getText() : passwordField.getText();
+    }
+
+    @FXML
     @SuppressWarnings("PMD.UnusedPrivateMethod") // invoked reflectively via onAction="#handleLogin" in Login.fxml
     private void handleLogin() {
         try {
-            User user = authenticationService.login(usernameField.getText(), passwordField.getText());
+            User user = authenticationService.login(usernameField.getText(), enteredPassword());
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/com/nextit/view/MainLayout.fxml"));
             javafx.scene.layout.BorderPane root = loader.load();
             AppController appController = loader.getController();
@@ -37,7 +71,8 @@ public class LoginController {
         } catch (AppException e) {
             com.nextit.security.Session.logout();
             errorLabel.setText(e.getMessage());
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.error("Login failed due to an unexpected error", e);
             com.nextit.security.Session.logout();
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");

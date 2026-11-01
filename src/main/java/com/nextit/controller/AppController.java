@@ -11,8 +11,12 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AppController {
+
+    private static final Logger log = LoggerFactory.getLogger(AppController.class);
 
     @FXML private Label headerLabel;
     @FXML private Label userLabel;
@@ -47,14 +51,18 @@ public class AppController {
             case INSTRUCTOR -> {
                 sidebar.getChildren().add(navButton("Profile", () -> contentPane.setCenter(InstructorViews.profile())));
                 sidebar.getChildren().add(navButton("Students", () -> contentPane.setCenter(InstructorViews.students())));
+                sidebar.getChildren().add(navButton("Portfolios", () -> contentPane.setCenter(InstructorViews.portfolios())));
                 sidebar.getChildren().add(navButton("Subjects", () -> contentPane.setCenter(InstructorViews.subjects())));
                 sidebar.getChildren().add(navButton("Technical Skills", () -> contentPane.setCenter(InstructorViews.skills())));
                 sidebar.getChildren().add(navButton("Grades", () -> contentPane.setCenter(InstructorViews.grades())));
                 sidebar.getChildren().add(navButton("Attendance", () -> contentPane.setCenter(InstructorViews.attendance())));
                 sidebar.getChildren().add(navButton("Technical Evaluations", () -> contentPane.setCenter(InstructorViews.technicalEvaluations())));
                 sidebar.getChildren().add(navButton("Projects", () -> contentPane.setCenter(InstructorViews.projects())));
+                sidebar.getChildren().add(navButton("Achievements", () -> contentPane.setCenter(InstructorViews.achievements())));
+                sidebar.getChildren().add(navButton("Certifications", () -> contentPane.setCenter(InstructorViews.certifications())));
                 sidebar.getChildren().add(navButton("Project Evaluations", () -> contentPane.setCenter(InstructorViews.evaluations())));
                 sidebar.getChildren().add(navButton("Academic Support", () -> contentPane.setCenter(InstructorViews.support())));
+                sidebar.getChildren().add(navButton("Opportunities", () -> contentPane.setCenter(InstructorViews.opportunities())));
             }
             case EMPLOYER -> {
                 sidebar.getChildren().add(navButton("Company Profile", () -> contentPane.setCenter(EmployerViews.profile())));
@@ -67,10 +75,20 @@ public class AppController {
                 sidebar.getChildren().add(navButton("Users", () -> contentPane.setCenter(AdminViews.users())));
                 sidebar.getChildren().add(navButton("Subjects", () -> contentPane.setCenter(AdminViews.subjects())));
                 sidebar.getChildren().add(navButton("Enrollments", () -> contentPane.setCenter(AdminViews.enrollments())));
+                sidebar.getChildren().add(navButton("Grades", () -> contentPane.setCenter(AdminViews.grades())));
+                sidebar.getChildren().add(navButton("Attendance", () -> contentPane.setCenter(AdminViews.attendance())));
                 sidebar.getChildren().add(navButton("Technical Skills", () -> contentPane.setCenter(AdminViews.skills())));
+                sidebar.getChildren().add(navButton("Technical Evaluations", () -> contentPane.setCenter(AdminViews.technicalEvaluations())));
+                sidebar.getChildren().add(navButton("Projects", () -> contentPane.setCenter(AdminViews.projects())));
+                sidebar.getChildren().add(navButton("Project Evaluations", () -> contentPane.setCenter(AdminViews.projectEvaluations())));
+                sidebar.getChildren().add(navButton("Achievements", () -> contentPane.setCenter(AdminViews.achievements())));
+                sidebar.getChildren().add(navButton("Certifications", () -> contentPane.setCenter(AdminViews.certifications())));
+                sidebar.getChildren().add(navButton("Academic Support", () -> contentPane.setCenter(AdminViews.academicSupport())));
                 sidebar.getChildren().add(navButton("Students", () -> contentPane.setCenter(AdminViews.students())));
                 sidebar.getChildren().add(navButton("Instructors", () -> contentPane.setCenter(AdminViews.instructors())));
                 sidebar.getChildren().add(navButton("Employers", () -> contentPane.setCenter(AdminViews.employers())));
+                sidebar.getChildren().add(navButton("Opportunities", () -> contentPane.setCenter(AdminViews.opportunities())));
+                sidebar.getChildren().add(navButton("Applications", () -> contentPane.setCenter(AdminViews.applications())));
                 sidebar.getChildren().add(navButton("Portfolios", () -> contentPane.setCenter(AdminViews.portfolios())));
                 sidebar.getChildren().add(navButton("System", () -> contentPane.setCenter(AdminViews.system())));
             }
@@ -90,6 +108,7 @@ public class AppController {
         try {
             action.run();
         } catch (Exception ex) {
+            log.error("Sidebar action failed", ex);
             String message = ex.getMessage();
             com.nextit.util.Alerts.error(message == null || message.isBlank()
                     ? "The action could not be completed." : message);
@@ -114,7 +133,8 @@ public class AppController {
             LoginController controller = loader.getController();
             controller.setAuthenticationService(new AuthenticationService(new com.nextit.repository.JdbcUserRepository()));
             stage.setScene(scene);
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
+            log.error("Could not return to the login screen", ex);
             com.nextit.util.Alerts.error("Could not return to login.");
         }
     }

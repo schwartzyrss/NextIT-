@@ -18,9 +18,15 @@ public class StudentService {
 
     public List<Achievement> achievementsFor(int studentId) { return achievementRepo.findByStudentId(studentId); }
     public List<Certification> certificationsFor(int studentId) { return certificationRepo.findByStudentId(studentId); }
+    public List<Achievement> allAchievements() { return achievementRepo.findAll(); }
+    public List<Certification> allCertifications() { return certificationRepo.findAll(); }
 
     public void saveAchievement(Achievement a) {
         Validator.notBlank(a.getTitle(), "Achievement title");
+        Validator.maxLength(a.getTitle(), 200, "Achievement title");
+        Validator.maxLength(a.getDescription(), 16000, "Description");
+        Validator.maxLength(a.getOrganization(), 150, "Organization");
+        Validator.maxLength(a.getVerificationUrl(), 255, "Verification URL");
         Validator.optionalWebUrl(a.getVerificationUrl(), "Verification URL");
         if (a.getStudentId() <= 0 || studentRepo.findById(a.getStudentId()).isEmpty()) {
             throw new AppException("A valid student is required.");
@@ -49,6 +55,9 @@ public class StudentService {
     public void saveCertification(Certification c) {
         Validator.notBlank(c.getCertificationName(), "Certification name");
         Validator.notBlank(c.getIssuingOrganization(), "Issuing organization");
+        Validator.maxLength(c.getCertificationName(), 200, "Certification name");
+        Validator.maxLength(c.getIssuingOrganization(), 150, "Issuing organization");
+        Validator.maxLength(c.getCredentialUrl(), 255, "Credential URL");
         Validator.optionalWebUrl(c.getCredentialUrl(), "Credential URL");
         if (c.getStudentId() <= 0 || studentRepo.findById(c.getStudentId()).isEmpty()) {
             throw new AppException("A valid student is required.");

@@ -74,6 +74,9 @@ public final class StudentViews {
         return Ui.page("Student Dashboard",
                 "Welcome back, " + Session.currentUser().getFullName() + ". Here is your academic and career progress at a glance.",
                 row1, row2,
+                DashboardCharts.row(
+                        DashboardCharts.gradeTrend(grades),
+                        DashboardCharts.attendanceSummary(attendance)),
                 Ui.subtitle("Use the sidebar to manage your academic records, skills, projects and portfolio."));
     }
 
@@ -552,9 +555,16 @@ public final class StudentViews {
         bio.setText(loaded.getBio());
         TextArea goal = Ui.area("Career goal");
         goal.setText(loaded.getCareerGoal());
-        CheckBox requestReview = new CheckBox("Share with employers (submit for approval)");
-        requestReview.setSelected(loaded.getVisibility() != null
-                && !"Private".equalsIgnoreCase(loaded.getVisibility()));
+        ComboBox<String> sharing = Ui.combo(
+                List.of("Private", "Public", "Submit for approval"), s -> s);
+        if ("Public".equalsIgnoreCase(loaded.getVisibility())) {
+            sharing.setValue("Public");
+        } else if ("Pending".equalsIgnoreCase(loaded.getVisibility())
+                || "Approved".equalsIgnoreCase(loaded.getVisibility())) {
+            sharing.setValue("Submit for approval");
+        } else {
+            sharing.setValue("Private");
+        }
 
         Label visibility = new Label(loaded.getVisibility() == null ? "Private" : loaded.getVisibility());
         Tab previewTab = tab("Preview", portfolioPreview(sid, loaded));
@@ -566,7 +576,10 @@ public final class StudentViews {
             loaded.setHeadline(headline.getText());
             loaded.setBio(bio.getText());
             loaded.setCareerGoal(goal.getText());
-            if (requestReview.isSelected()) {
+            String choice = sharing.getValue();
+            if ("Public".equals(choice)) {
+                loaded.setVisibility("Public");
+            } else if ("Submit for approval".equals(choice)) {
                 // Keep an existing approval; new or edited content is submitted
                 // for review. PortfolioService downgrades changed approvals.
                 if (!"Approved".equalsIgnoreCase(loaded.getVisibility())) loaded.setVisibility("Pending");
@@ -577,15 +590,19 @@ public final class StudentViews {
             visibility.setText(loaded.getVisibility());
             previewTab.setContent(portfolioPreview(sid, loaded));
             accessTab.setContent(portfolioAccess(loaded));
-            Alerts.info("Portfolio saved. " + ("Pending".equals(loaded.getVisibility())
-                    ? "It is now awaiting administrator approval." : "Current visibility: " + loaded.getVisibility() + "."));
+            String message = "Pending".equals(loaded.getVisibility())
+                    ? "It is now awaiting administrator approval."
+                    : "Public".equals(loaded.getVisibility())
+                            ? "It is now visible to every employer."
+                            : "Current visibility: " + loaded.getVisibility() + ".";
+            Alerts.info("Portfolio saved. " + message);
         }));
 
         VBox editor = new VBox(12,
-                Ui.subtitle("Your portfolio is shared with employers only after it is approved and access is granted."),
+                Ui.subtitle("Private keeps the portfolio hidden, Public shares it with every employer, and Submit for approval asks an administrator to approve it for granted employer access."),
                 Ui.form(new String[]{"Headline", "Biography", "Career goal", "Visibility"},
                         new Node[]{headline, bio, goal, visibility}),
-                requestReview, save);
+                new HBox(8, new Label("Sharing:"), sharing), save);
 
         TabPane tabs = new TabPane();
         tabs.getTabs().addAll(tab("Editor", editor), previewTab, accessTab);

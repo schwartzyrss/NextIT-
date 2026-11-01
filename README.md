@@ -11,7 +11,7 @@
 - Technical skills assessed by instructors
 - Full project CRUD for owners, group membership with shared project visibility, repository/demo links
 - Achievements and certifications CRUD
-- Digital portfolio editor, preview, approval submission, and employer access list
+- Digital portfolio editor with Private, Public, and approval-requested visibility, preview, and employer access list
 - Opportunity search/filtering, application submission, and application status tracking
 - Personal profile screen
 
@@ -26,6 +26,9 @@
 - Student project review with group member contributions and evaluations
 - Project evaluations with contribution, technical, teamwork, and overall scores
 - Academic support records
+- Achievement and certification records for students, with an explicit acting-student selector
+- Opportunity browsing (read-only) so instructors can advise students on current openings
+- Read-only browser for approved and public student portfolios
 - Personal profile screen
 
 ### Employer
@@ -34,7 +37,7 @@
 - Company profile editing
 - Internship and employment opportunity CRUD, search, and closing
 - Application review with status workflow (Pending, Reviewed, Shortlisted, Rejected, Accepted)
-- Portfolio search across approved and explicitly shared student portfolios, with full portfolio detail
+- Portfolio search across approved and explicitly shared student portfolios plus public portfolios, with full portfolio detail
 
 ### Administrator
 
@@ -42,7 +45,11 @@
 - User account CRUD with BCrypt password hashing, password resets, and automatic role profiles
 - Subject and technical skill catalogue CRUD with duplicate validation
 - Enrollment management linking students to subjects and academic terms
+- Grade and attendance management with an explicit acting-instructor selector for accurate audit trails
+- Technical skill, project, project evaluation, and academic support management
+- Achievement and certification records for any student
 - Student, instructor, and employer profile management
+- Project, opportunity, and application management across all owners
 - Portfolio review with full student portfolio detail, approval, employer access granting, and access revocation
 - Read-only system diagnostics with connection testing and database row counts
 - Personal profile screen
@@ -52,8 +59,10 @@
 - Role-based navigation and session handling
 - Layered architecture: model, repository, service, controller, security, util, exception
 - Parameterized SQL through JDBC
-- Input validation and friendly database error handling
+- Input validation (required fields, formats, ranges, and database column lengths) and friendly database error handling
 - Search and filtering on the main data tables
+- Dashboard charts for grade trends, attendance composition, activity performance, and application/enrollment/portfolio status
+- Consistent empty-state placeholders, password visibility toggle, and responsive scrollable navigation
 
 ## Technology Stack
 
@@ -153,6 +162,6 @@ mvn clean test
 mvn clean package
 ```
 
-The automated tests cover password hashing, validation, session behaviour, grade and attendance calculations, and project evaluation averages. Database-backed workflows require a running MySQL instance.
+The automated tests cover password hashing, validation, session behaviour, grade and attendance calculations, portfolio visibility rules, project evaluation averages, and database-backed ownership/authorization boundaries for achievements, certifications, projects, portfolios, opportunities, applications, enrollments, grades, attendance, and technical-skill assessments.
 
-The read-only schema integration tests check every documented table's columns, constraints, unique keys, and foreign-key relationships against a MySQL database. To run them, set `NEXTIT_TEST_DB_URL` to a separate test database initialized with `database/schema.sql`; optionally set `NEXTIT_TEST_DB_USER` and `NEXTIT_TEST_DB_PASSWORD`. Without a MySQL test URL, these integration tests are skipped.
+The read-only schema integration tests check every documented table's columns, constraints, unique keys, and foreign-key relationships. By default they start an embedded MariaDB instance on a free port and load `database/schema.sql`, so no local MySQL installation is required. To run them against an existing database instead, set `NEXTIT_TEST_DB_URL` to a test database already initialized with `database/schema.sql`; optionally set `NEXTIT_TEST_DB_USER` and `NEXTIT_TEST_DB_PASSWORD`.

@@ -35,6 +35,7 @@ public class AdminService {
         validateUser(user);
         Validator.notBlank(plainPassword, "Password");
         if (plainPassword.length() < 6) throw new AppException("Password must be at least 6 characters.");
+        if (plainPassword.length() > 72) throw new AppException("Password must be 72 characters or fewer.");
         if (userRepo.findByUsername(user.getUsername().trim()).isPresent()) {
             throw new AppException("That username is already taken.");
         }
@@ -85,6 +86,7 @@ public class AdminService {
                 .orElseThrow(() -> new AppException("User account not found."));
         Validator.notBlank(plainPassword, "Password");
         if (plainPassword.length() < 6) throw new AppException("Password must be at least 6 characters.");
+        if (plainPassword.length() > 72) throw new AppException("Password must be 72 characters or fewer.");
         user.setPasswordHash(AuthenticationService.hashPassword(plainPassword));
         userRepo.updatePassword(userId, user.getPasswordHash());
     }
@@ -92,6 +94,9 @@ public class AdminService {
     public void saveSubject(Subject subject) {
         Validator.notBlank(subject.getSubjectCode(), "Subject code");
         Validator.notBlank(subject.getSubjectName(), "Subject name");
+        Validator.maxLength(subject.getSubjectCode(), 30, "Subject code");
+        Validator.maxLength(subject.getSubjectName(), 150, "Subject name");
+        Validator.maxLength(subject.getDescription(), 16000, "Description");
         if (!Double.isFinite(subject.getUnits()) || subject.getUnits() <= 0 || subject.getUnits() > 99.9) {
             throw new AppException("Units must be a finite number between 0.1 and 99.9.");
         }
@@ -110,6 +115,9 @@ public class AdminService {
     public void updateStudent(Student student) {
         Validator.notBlank(student.getStudentNumber(), "Student number");
         Validator.notBlank(student.getProgram(), "Program");
+        Validator.maxLength(student.getStudentNumber(), 30, "Student number");
+        Validator.maxLength(student.getProgram(), 100, "Program");
+        Validator.maxLength(student.getSection(), 30, "Section");
         if (student.getYearLevel() < 1) throw new AppException("Year level must be at least 1.");
         studentRepo.findAll().stream()
                 .filter(other -> other.getStudentId() != student.getStudentId())
@@ -123,7 +131,10 @@ public class AdminService {
 
     public void updateInstructor(Instructor instructor) {
         Validator.notBlank(instructor.getDepartment(), "Department");
+        Validator.maxLength(instructor.getDepartment(), 100, "Department");
+        Validator.maxLength(instructor.getSpecialization(), 150, "Specialization");
         String number = instructor.getEmployeeNumber() == null ? "" : instructor.getEmployeeNumber().trim();
+        Validator.maxLength(number, 30, "Employee number");
         if (!number.isBlank()) {
             instructorRepo.findAll().stream()
                     .filter(other -> other.getInstructorId() != instructor.getInstructorId())
@@ -137,6 +148,11 @@ public class AdminService {
 
     public void updateEmployer(Employer employer) {
         Validator.notBlank(employer.getCompanyName(), "Company name");
+        Validator.maxLength(employer.getCompanyName(), 150, "Company name");
+        Validator.maxLength(employer.getIndustry(), 100, "Industry");
+        Validator.maxLength(employer.getContactPerson(), 100, "Contact person");
+        Validator.maxLength(employer.getContactNumber(), 30, "Contact number");
+        Validator.maxLength(employer.getAddress(), 255, "Address");
         employerRepo.update(employer);
     }
 
@@ -145,6 +161,10 @@ public class AdminService {
         Validator.email(user.getEmail());
         Validator.notBlank(user.getFirstName(), "First name");
         Validator.notBlank(user.getLastName(), "Last name");
+        Validator.maxLength(user.getUsername(), 50, "Username");
+        Validator.maxLength(user.getEmail(), 100, "Email");
+        Validator.maxLength(user.getFirstName(), 50, "First name");
+        Validator.maxLength(user.getLastName(), 50, "Last name");
         if (user.getRole() == null) throw new AppException("A role is required.");
     }
 

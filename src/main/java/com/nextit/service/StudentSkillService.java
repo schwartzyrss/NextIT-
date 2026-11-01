@@ -46,6 +46,7 @@ public class StudentSkillService {
             Validator.nonNegative(s.getAssessmentScore(), "Assessment score");
             if (s.getAssessmentScore() > 100) throw new AppException("Assessment score cannot exceed 100.");
         }
+        Validator.maxLength(s.getRemarks(), 16000, "Remarks");
         s.setAssessedBy(instructorId);
         s.setAssessedAt(LocalDateTime.now());
         // Keep one assessment per student/skill pair; re-assessing updates it.

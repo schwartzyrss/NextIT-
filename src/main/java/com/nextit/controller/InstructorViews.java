@@ -21,6 +21,7 @@ public final class InstructorViews {
 
     private static final AcademicService academic = new AcademicService();
     private static final ProjectService projects = new ProjectService();
+    private static final PortfolioService portfolios = new PortfolioService();
     private static final SupportService support = new SupportService();
     private static final StudentSkillService skills = new StudentSkillService();
     private static final DirectoryService directory = new DirectoryService();
@@ -84,6 +85,44 @@ public final class InstructorViews {
                 Ui.toolbar(new Label("Search:"), search, refresh), table);
     }
 
+    public static Node portfolios() {
+        Map<Integer, String> studentNames = directory.studentNames();
+        TableView<Portfolio> table = Ui.table();
+        Ui.addColumn(table, "Student", p -> studentNames.getOrDefault(p.getStudentId(), "Student #" + p.getStudentId()));
+        Ui.addColumn(table, "Headline", Portfolio::getHeadline);
+        Ui.addColumn(table, "Career Goal", Portfolio::getCareerGoal);
+        Ui.addColumn(table, "Visibility", Portfolio::getVisibility);
+        Ui.addColumn(table, "Updated", p -> p.getUpdatedAt() == null ? "" : p.getUpdatedAt().toLocalDate().toString());
+
+        TextField search = Ui.field("Search by student, headline or career goal...");
+        Runnable filter = () -> {
+            studentNames.clear();
+            studentNames.putAll(directory.studentNames());
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
+            table.setItems(FXCollections.observableArrayList(portfolios.approvedPortfolios().stream()
+                    .filter(p -> q.isBlank()
+                            || studentNames.getOrDefault(p.getStudentId(), "").toLowerCase(Locale.ROOT).contains(q)
+                            || value(p.getHeadline()).toLowerCase(Locale.ROOT).contains(q)
+                            || value(p.getCareerGoal()).toLowerCase(Locale.ROOT).contains(q))
+                    .toList()));
+        };
+        filter.run();
+        search.textProperty().addListener((obs, old, value) -> filter.run());
+
+        Button view = new Button("View Portfolio");
+        view.getStyleClass().add("primary-button");
+        view.setOnAction(e -> {
+            Portfolio selected = table.getSelectionModel().getSelectedItem();
+            if (selected == null) { Alerts.error("Select a portfolio to view."); return; }
+            guard(() -> PortfolioDetailsView.show(selected, true));
+        });
+        Button refresh = new Button("Refresh");
+        refresh.setOnAction(e -> filter.run());
+        return Ui.page("Student Portfolios",
+                "Browse the portfolios that have been approved or made public by students.",
+                Ui.toolbar(new Label("Search:"), search, view, refresh), table);
+    }
+
     public static Node subjects() {
         TableView<Subject> table = Ui.table();
         Ui.addColumn(table, "Code", Subject::getSubjectCode);
@@ -108,6 +147,18 @@ public final class InstructorViews {
 
     public static Node skills() {
         return SkillCatalogView.view();
+    }
+
+    public static Node achievements() {
+        return DevelopmentManagementViews.achievements();
+    }
+
+    public static Node certifications() {
+        return DevelopmentManagementViews.certifications();
+    }
+
+    public static Node opportunities() {
+        return DevelopmentManagementViews.opportunities(false);
     }
 
     public static Node projects() {
@@ -208,10 +259,12 @@ public final class InstructorViews {
     }
 
     public static Node dashboard() {
+        java.util.List<Grade> allGrades = academic.allGrades();
+        java.util.List<Attendance> allAttendance = academic.allAttendance();
         javafx.scene.layout.HBox cards1 = new javafx.scene.layout.HBox(12,
                 Ui.card("Students", String.valueOf(directory.students().size())),
-                Ui.card("Grade Records", String.valueOf(academic.allGrades().size())),
-                Ui.card("Attendance Records", String.valueOf(academic.allAttendance().size())),
+                Ui.card("Grade Records", String.valueOf(allGrades.size())),
+                Ui.card("Attendance Records", String.valueOf(allAttendance.size())),
                 Ui.card("Skill Evaluations", String.valueOf(skills.all().size())));
         javafx.scene.layout.HBox cards2 = new javafx.scene.layout.HBox(12,
                 Ui.card("Project Evaluations", String.valueOf(projects.allEvaluations().size())),
@@ -219,7 +272,10 @@ public final class InstructorViews {
                 Ui.card("Projects", String.valueOf(projects.allProjects().size())));
         return Ui.page("Instructor Dashboard",
                 "Welcome, " + Session.currentUser().getFullName() + ". Manage grades, attendance, evaluations and student support.",
-                cards1, cards2);
+                cards1, cards2,
+                DashboardCharts.row(
+                        DashboardCharts.attendanceSummary(allAttendance),
+                        DashboardCharts.averageByActivityType(allGrades)));
     }
 
     public static Node grades() {

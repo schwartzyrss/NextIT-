@@ -53,8 +53,17 @@ public final class AdminViews {
                 Ui.card("Portfolios", String.valueOf(portfolios.allPortfolios().size())),
                 Ui.card("Pending Portfolios", String.valueOf(portfolios.allPortfolios().stream()
                         .filter(p -> "Pending".equalsIgnoreCase(p.getVisibility())).count())));
+        Map<String, Long> enrollmentStatuses = DashboardCharts.countByStatus(
+                academic.allEnrollments().stream().map(Enrollment::getStatus).toList(),
+                List.of("Enrolled", "Dropped", "Completed"));
         return Ui.page("Administrator Dashboard", "Manage accounts, academic reference data and student portfolios.",
-                row1, row2);
+                row1, row2,
+                DashboardCharts.row(
+                        DashboardCharts.statusSummary("Enrollment Status", enrollmentStatuses),
+                        DashboardCharts.statusSummary("Portfolio Visibility",
+                                DashboardCharts.countByStatus(
+                                        portfolios.allPortfolios().stream().map(Portfolio::getVisibility).toList(),
+                                        List.of("Private", "Pending", "Approved", "Public")))));
     }
 
     public static Node users() {
@@ -342,6 +351,61 @@ public final class AdminViews {
         return SkillCatalogView.view();
     }
 
+    public static Node grades() {
+        ComboBox<Instructor> acting = AcademicManagementViews.instructorSelector();
+        return AcademicManagementViews.grades(
+                () -> AcademicManagementViews.selectedInstructor(acting),
+                AcademicManagementViews.instructorControl(acting));
+    }
+
+    public static Node attendance() {
+        ComboBox<Instructor> acting = AcademicManagementViews.instructorSelector();
+        return AcademicManagementViews.attendance(
+                () -> AcademicManagementViews.selectedInstructor(acting),
+                AcademicManagementViews.instructorControl(acting));
+    }
+
+    public static Node technicalEvaluations() {
+        ComboBox<Instructor> acting = AcademicManagementViews.instructorSelector();
+        return AcademicManagementViews.technicalEvaluations(
+                () -> AcademicManagementViews.selectedInstructor(acting),
+                AcademicManagementViews.instructorControl(acting));
+    }
+
+    public static Node projectEvaluations() {
+        ComboBox<Instructor> acting = AcademicManagementViews.instructorSelector();
+        return AcademicManagementViews.evaluations(
+                () -> AcademicManagementViews.selectedInstructor(acting),
+                AcademicManagementViews.instructorControl(acting));
+    }
+
+    public static Node academicSupport() {
+        ComboBox<Instructor> acting = AcademicManagementViews.instructorSelector();
+        return AcademicManagementViews.support(
+                () -> AcademicManagementViews.selectedInstructor(acting),
+                AcademicManagementViews.instructorControl(acting));
+    }
+
+    public static Node achievements() {
+        return DevelopmentManagementViews.achievements();
+    }
+
+    public static Node certifications() {
+        return DevelopmentManagementViews.certifications();
+    }
+
+    public static Node projects() {
+        return DevelopmentManagementViews.projects();
+    }
+
+    public static Node opportunities() {
+        return DevelopmentManagementViews.opportunities(true);
+    }
+
+    public static Node applications() {
+        return DevelopmentManagementViews.applications(true);
+    }
+
     public static Node students() {
         Map<Integer, String> names = directory.studentNames();
         TableView<Student> table = Ui.table();
@@ -530,7 +594,7 @@ public final class AdminViews {
         Ui.addColumn(table, "Visibility", Portfolio::getVisibility);
         Ui.addColumn(table, "Updated", p -> p.getUpdatedAt() == null ? "" : p.getUpdatedAt().toLocalDate().toString());
 
-        ComboBox<String> filter = Ui.combo(List.of("All portfolios", "Pending", "Approved", "Private"), s -> s);
+        ComboBox<String> filter = Ui.combo(List.of("All portfolios", "Pending", "Approved", "Public", "Private"), s -> s);
         filter.getSelectionModel().selectFirst();
         TextField search = Ui.field("Search by student or headline...");
         Runnable applyFilter = () -> {

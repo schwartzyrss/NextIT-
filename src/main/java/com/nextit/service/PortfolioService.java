@@ -6,11 +6,16 @@ import com.nextit.repository.*;
 import com.nextit.util.Validator;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 public class PortfolioService {
+    private static final List<String> VISIBILITIES =
+            List.of("Private", "Pending", "Approved", "Public");
+
     private final JdbcPortfolioRepository portfolioRepo = new JdbcPortfolioRepository();
     private final JdbcPortfolioAccessRepository accessRepo = new JdbcPortfolioAccessRepository();
     private final JdbcEmployerRepository employerRepo = new JdbcEmployerRepository();
@@ -21,22 +26,43 @@ public class PortfolioService {
     public List<Portfolio> approvedPortfolios() { return portfolioRepo.findApproved(); }
     public List<Portfolio> allPortfolios() { return portfolioRepo.findAll(); }
 
-    /** Only portfolios that are approved and explicitly shared with the employer. */
+    /** Public portfolios plus approved portfolios that were explicitly shared with the employer. */
     public List<Portfolio> portfoliosForEmployer(int employerId) {
-        return accessRepo.findByEmployerId(employerId).stream()
+        Map<Integer, Portfolio> visible = new LinkedHashMap<>();
+        // Public portfolios are visible to every employer without an access record.
+        portfolioRepo.findApproved().stream()
+                .filter(PortfolioService::isPublic)
+                .forEach(p -> visible.put(p.getPortfolioId(), p));
+        // Approved portfolios still require an explicit, non-revoked access grant.
+        accessRepo.findByEmployerId(employerId).stream()
                 .filter(a -> "Approved".equalsIgnoreCase(a.getAccessStatus()))
                 .map(a -> portfolioRepo.findById(a.getPortfolioId()))
                 .flatMap(Optional::stream)
-                .filter(p -> "Approved".equalsIgnoreCase(p.getVisibility()))
-                .toList();
+                .filter(PortfolioService::isApproved)
+                .forEach(p -> visible.putIfAbsent(p.getPortfolioId(), p));
+        return List.copyOf(visible.values());
     }
 
     public boolean isVisibleToEmployer(int portfolioId, int employerId) {
+        Optional<Portfolio> portfolio = portfolioRepo.findById(portfolioId);
+        if (portfolio.isEmpty()) return false;
+        if (isPublic(portfolio.get())) return true;
+        if (!isApproved(portfolio.get())) return false;
         return accessRepo.findByPortfolioAndEmployer(portfolioId, employerId)
                 .filter(a -> "Approved".equalsIgnoreCase(a.getAccessStatus()))
-                .flatMap(a -> portfolioRepo.findById(portfolioId))
-                .filter(p -> "Approved".equalsIgnoreCase(p.getVisibility()))
                 .isPresent();
+    }
+
+    static boolean isValidVisibility(String visibility) {
+        return visibility != null && VISIBILITIES.contains(visibility);
+    }
+
+    static boolean isPublic(Portfolio portfolio) {
+        return portfolio != null && "Public".equalsIgnoreCase(portfolio.getVisibility());
+    }
+
+    static boolean isApproved(Portfolio portfolio) {
+        return portfolio != null && "Approved".equalsIgnoreCase(portfolio.getVisibility());
     }
 
     public void save(Portfolio p) {
@@ -44,8 +70,11 @@ public class PortfolioService {
             throw new AppException("A valid student is required to save a portfolio.");
         }
         Validator.notBlank(p.getVisibility(), "Portfolio visibility");
-        if (!List.of("Private", "Pending", "Approved").contains(p.getVisibility())) {
-            throw new AppException("Portfolio visibility must be Private, Pending, or Approved.");
+        Validator.maxLength(p.getHeadline(), 200, "Headline");
+        Validator.maxLength(p.getBio(), 16000, "Bio");
+        Validator.maxLength(p.getCareerGoal(), 16000, "Career goal");
+        if (!isValidVisibility(p.getVisibility())) {
+            throw new AppException("Portfolio visibility must be Private, Pending, Approved, or Public.");
         }
         Optional<Portfolio> existing = portfolioRepo.findByStudentId(p.getStudentId());
         if ("Approved".equalsIgnoreCase(p.getVisibility())
@@ -55,14 +84,13 @@ public class PortfolioService {
         if (existing.isPresent()) {
             Portfolio stored = existing.get();
             p.setPortfolioId(stored.getPortfolioId());
-            if ("Approved".equalsIgnoreCase(stored.getVisibility())
-                    && "Approved".equalsIgnoreCase(p.getVisibility())
-                    && contentChanged(stored, p)) {
+            if (isApproved(stored) && isApproved(p) && contentChanged(stored, p)) {
                 p.setVisibility("Pending");
             }
             portfolioRepo.update(p);
         } else {
-            if (!"Private".equals(p.getVisibility()) && !"Pending".equals(p.getVisibility())) {
+            if (!"Private".equals(p.getVisibility()) && !"Pending".equals(p.getVisibility())
+                    && !"Public".equals(p.getVisibility())) {
                 p.setVisibility("Private");
             }
             portfolioRepo.save(p);
@@ -91,8 +119,8 @@ public class PortfolioService {
     public void grantAccess(int portfolioId, int employerId) {
         Portfolio portfolio = portfolioRepo.findById(portfolioId)
                 .orElseThrow(() -> new AppException("Portfolio not found."));
-        if (!"Approved".equalsIgnoreCase(portfolio.getVisibility())) {
-            throw new AppException("Approve the portfolio before granting employer access.");
+        if (!isApproved(portfolio) && !isPublic(portfolio)) {
+            throw new AppException("Submit and approve the portfolio before granting employer access.");
         }
         if (employerRepo.findById(employerId).isEmpty()) {
             throw new AppException("Select a valid employer.");

@@ -70,15 +70,20 @@ public final class EmployerViews {
     public static Node dashboard() {
         int eid = employerId();
         List<JobOpportunity> owned = career.opportunitiesForEmployer(eid);
+        List<Application> applications = career.applicationsForEmployer(eid);
         long open = owned.stream().filter(o -> "Open".equalsIgnoreCase(o.getStatus())).count();
         javafx.scene.layout.HBox cards = new javafx.scene.layout.HBox(12,
                 Ui.card("Posted Opportunities", String.valueOf(owned.size())),
                 Ui.card("Open Opportunities", String.valueOf(open)),
-                Ui.card("Applications", String.valueOf(career.applicationsForEmployer(eid).size())),
+                Ui.card("Applications", String.valueOf(applications.size())),
                 Ui.card("Shared Portfolios", String.valueOf(portfolios.portfoliosForEmployer(eid).size())));
         return Ui.page("Employer Dashboard",
                 "Welcome, " + Session.currentUser().getFullName() + ". Manage your opportunities and review student applications.",
-                cards);
+                cards,
+                DashboardCharts.row(DashboardCharts.statusSummary("Application Status",
+                        DashboardCharts.countByStatus(
+                                applications.stream().map(Application::getStatus).toList(),
+                                List.of("Pending", "Reviewed", "Shortlisted", "Rejected", "Accepted")))));
     }
 
     public static Node opportunities() {
@@ -309,7 +314,7 @@ public final class EmployerViews {
         Button refresh = new Button("Refresh");
         refresh.setOnAction(e -> filter.run());
 
-        return Ui.page("Student Portfolios", "Only portfolios that are approved and explicitly shared with your company are shown here. Filter by technical skill or category.",
+        return Ui.page("Student Portfolios", "Public portfolios and portfolios explicitly shared with your company are shown here. Filter by technical skill or category.",
                 Ui.toolbar(new Label("Search:"), search, skillFilter, categoryFilter, view, refresh), table);
     }
 

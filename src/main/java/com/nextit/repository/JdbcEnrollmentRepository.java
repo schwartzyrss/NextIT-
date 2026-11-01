@@ -35,7 +35,11 @@ public class JdbcEnrollmentRepository {
     }
 
     public Optional<Enrollment> findByStudentAndSubject(int studentId, int subjectId) {
-        String sql = "SELECT * FROM enrollments WHERE student_id=? AND subject_id=? ORDER BY enrollment_id";
+        // A student can retake a subject across terms. Prefer the in-progress record,
+        // then the most recently created one, so callers get a deterministic result.
+        String sql = "SELECT * FROM enrollments WHERE student_id=? AND subject_id=? "
+                + "ORDER BY CASE status WHEN 'Enrolled' THEN 0 WHEN 'Completed' THEN 1 ELSE 2 END, "
+                + "enrollment_id DESC";
         try (Connection c = DatabaseConfig.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, studentId);

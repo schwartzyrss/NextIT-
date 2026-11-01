@@ -19,6 +19,16 @@ public class JdbcAchievementRepository {
         } catch (SQLException e) { throw new AppException("Failed to load achievements", e); }
     }
 
+    public List<Achievement> findAll() {
+        List<Achievement> list = new ArrayList<>();
+        try (Connection c = DatabaseConfig.getConnection();
+             Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery("SELECT * FROM achievements ORDER BY achievement_id")) {
+            while (rs.next()) list.add(map(rs));
+            return list;
+        } catch (SQLException e) { throw new AppException("Failed to load achievements", e); }
+    }
+
     public java.util.Optional<Achievement> findById(int achievementId) {
         try (Connection c = DatabaseConfig.getConnection();
              PreparedStatement ps = c.prepareStatement("SELECT * FROM achievements WHERE achievement_id=?")) {

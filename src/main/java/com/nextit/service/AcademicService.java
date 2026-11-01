@@ -61,6 +61,8 @@ public class AcademicService {
         }
         Validator.notBlank(e.getAcademicYear(), "Academic year");
         Validator.notBlank(e.getSemester(), "Semester");
+        Validator.maxLength(e.getAcademicYear(), 20, "Academic year");
+        Validator.maxLength(e.getSemester(), 20, "Semester");
         if (e.getStatus() == null || !ENROLLMENT_STATUSES.contains(e.getStatus())) {
             throw new AppException("Enrollment status must be Enrolled, Dropped, or Completed.");
         }
@@ -103,6 +105,8 @@ public class AcademicService {
     private void validateGrade(Grade g) {
         Validator.notBlank(g.getActivityName(), "Activity name");
         Validator.notBlank(g.getActivityType(), "Activity type");
+        Validator.maxLength(g.getActivityName(), 150, "Activity name");
+        Validator.maxLength(g.getActivityType(), 50, "Activity type");
         if (g.getInstructorId() <= 0) throw new AppException("An instructor is required.");
         if (instructorRepo.findById(g.getInstructorId()).isEmpty()) {
             throw new AppException("The recording instructor could not be found.");
@@ -111,6 +115,7 @@ public class AcademicService {
             throw new AppException("Select a valid student and subject.");
         }
         Validator.score(g.getScore(), g.getMaxScore());
+        Validator.maxLength(g.getRemarks(), 16000, "Remarks");
     }
 
     public void recordAttendance(Attendance a) {
@@ -131,6 +136,7 @@ public class AcademicService {
         if (a.getStatus() == null || !ATTENDANCE_STATUSES.contains(a.getStatus())) {
             throw new AppException("Attendance status must be Present, Absent, Late, or Excused.");
         }
+        Validator.maxLength(a.getRemarks(), 16000, "Remarks");
         if (a.getRecordedBy() <= 0) throw new AppException("An instructor is required.");
         if (instructorRepo.findById(a.getRecordedBy()).isEmpty()) {
             throw new AppException("The recording instructor could not be found.");

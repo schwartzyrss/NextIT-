@@ -59,6 +59,12 @@ public class CareerService {
 
     public List<Application> applicationsByStudent(int studentId) { return appRepo.findByStudentId(studentId); }
     public List<Application> applicationsForOpportunity(int oppId) { return appRepo.findByOpportunityId(oppId); }
+    public List<Application> allApplications() { return appRepo.findAll(); }
+
+    public Application applicationById(int applicationId) {
+        return appRepo.findById(applicationId)
+                .orElseThrow(() -> new AppException("Application not found."));
+    }
 
     public List<Application> applicationsForEmployer(int employerId) {
         return opportunitiesForEmployer(employerId).stream()
@@ -100,6 +106,7 @@ public class CareerService {
         if (status == null || !List.of("Pending", "Reviewed", "Shortlisted", "Rejected", "Accepted").contains(status)) {
             throw new AppException("Select a valid application status.");
         }
+        Validator.maxLength(remarks, 16000, "Remarks");
         stored.setStatus(status);
         stored.setRemarks(remarks);
         appRepo.update(stored);
@@ -107,11 +114,15 @@ public class CareerService {
 
     private void validate(JobOpportunity o) {
         Validator.notBlank(o.getTitle(), "Title");
+        Validator.maxLength(o.getTitle(), 200, "Title");
+        Validator.maxLength(o.getLocation(), 150, "Location");
         if (!"Internship".equalsIgnoreCase(o.getOpportunityType())
                 && !"Employment".equalsIgnoreCase(o.getOpportunityType())) {
             throw new AppException("Opportunity type must be Internship or Employment.");
         }
         Validator.notBlank(o.getDescription(), "Description");
+        Validator.maxLength(o.getDescription(), 16000, "Description");
+        Validator.maxLength(o.getRequiredSkills(), 16000, "Required skills");
         boolean inactive = "Closed".equalsIgnoreCase(o.getStatus()) || "Archived".equalsIgnoreCase(o.getStatus());
         if (!inactive && o.getDeadline() != null && o.getDeadline().isBefore(LocalDate.now())) {
             throw new AppException("The deadline cannot be in the past while the opportunity is open.");

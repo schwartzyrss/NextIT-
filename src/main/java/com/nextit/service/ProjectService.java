@@ -60,6 +60,8 @@ public class ProjectService {
         if (memberRepo.findByProjectAndStudent(m.getProjectId(), m.getStudentId()).isPresent()) {
             throw new AppException("That student is already a member of this project.");
         }
+        Validator.maxLength(m.getRole(), 100, "Role");
+        Validator.maxLength(m.getContribution(), 16000, "Contribution");
         memberRepo.save(m);
     }
 
@@ -109,6 +111,7 @@ public class ProjectService {
             e.setOverallScore(average(e.getContributionScore(), e.getTechnicalScore(), e.getTeamworkScore()));
         }
         validateScore(e.getOverallScore(), "Overall score");
+        Validator.maxLength(e.getFeedback(), 16000, "Feedback");
         // One evaluation per student per project: re-evaluating updates the
         // existing record instead of creating a duplicate row.
         evalRepo.findByProjectAndStudent(e.getProjectId(), e.getStudentId())
@@ -121,6 +124,13 @@ public class ProjectService {
         Validator.notBlank(p.getProjectTitle(), "Project title");
         Validator.notBlank(p.getProjectType(), "Project type");
         Validator.notBlank(p.getStatus(), "Project status");
+        Validator.maxLength(p.getProjectTitle(), 200, "Project title");
+        Validator.maxLength(p.getProjectType(), 50, "Project type");
+        Validator.maxLength(p.getStatus(), 30, "Project status");
+        Validator.maxLength(p.getRepositoryUrl(), 255, "Repository URL");
+        Validator.maxLength(p.getDemoUrl(), 255, "Demo URL");
+        Validator.maxLength(p.getDescription(), 16000, "Description");
+        Validator.maxLength(p.getTechnologiesUsed(), 16000, "Technologies used");
         Validator.optionalWebUrl(p.getRepositoryUrl(), "Repository URL");
         Validator.optionalWebUrl(p.getDemoUrl(), "Demo URL");
         if (p.getSubjectId() != null && subjectRepo.findById(p.getSubjectId()).isEmpty()) {

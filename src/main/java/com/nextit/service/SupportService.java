@@ -30,6 +30,11 @@ public class SupportService {
             throw new AppException("Select a valid subject.");
         }
         Validator.notBlank(a.getSupportType(), "Support type");
+        Validator.maxLength(a.getSupportType(), 50, "Support type");
+        Validator.maxLength(a.getReason(), 16000, "Reason");
+        Validator.maxLength(a.getActionTaken(), 16000, "Action taken");
+        Validator.maxLength(a.getOutcome(), 16000, "Outcome");
+        Validator.maxLength(a.getRemarks(), 16000, "Remarks");
         if (a.getSupportDate() == null) throw new AppException("Support date is required.");
         Validator.notBlank(a.getReason(), "Reason");
         repo.save(a);

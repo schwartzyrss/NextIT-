@@ -18,6 +18,13 @@ public final class Validator {
         }
     }
 
+    /** Rejects text that would not fit the matching database column. Null is allowed. */
+    public static void maxLength(String value, int maxLength, String fieldName) {
+        if (value != null && value.length() > maxLength) {
+            throw new AppException(fieldName + " must be " + maxLength + " characters or fewer.");
+        }
+    }
+
     /** Allows an empty value but rejects text that is not an http(s) URL. */
     public static void optionalWebUrl(String value, String fieldName) {
         if (value != null && !value.isBlank() && !value.trim().matches("^https?://\\S+$")) {

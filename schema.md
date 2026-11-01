@@ -8,7 +8,7 @@ The schema is designed around three primary user roles:
 
 - **Students** — manage projects, skills, achievements, and portfolios while viewing academic progress.
 - **Instructors** — manage academic records, attendance, evaluations, projects, and student support activities.
-- **Employers** — view approved student portfolios and manage internship or employment opportunities.
+- **Employers** — view approved and public student portfolios and manage internship or employment opportunities.
 
 ---
 
@@ -382,7 +382,7 @@ Stores the student's digital portfolio information.
 | headline | VARCHAR(200) | NULL | Portfolio headline |
 | bio | TEXT | NULL | Student biography |
 | career_goal | TEXT | NULL | Career objective |
-| visibility | VARCHAR(30) | NOT NULL | Private, approved, public |
+| visibility | VARCHAR(30) | NOT NULL | Private, Pending, Approved, Public |
 | created_at | DATETIME | NOT NULL | Portfolio creation date |
 | updated_at | DATETIME | NOT NULL | Last update |
 
@@ -530,6 +530,7 @@ Instructors can:
 - Review student projects.
 - Evaluate individual project contributions.
 - Record academic support activities.
+- View approved and public student portfolios.
 - Provide feedback on student development.
 
 ## Employer
@@ -537,7 +538,7 @@ Instructors can:
 Employers can:
 
 - Manage company information.
-- View approved student portfolios.
+- View approved and public student portfolios.
 - Review relevant skills and projects.
 - Post internship opportunities.
 - Post employment opportunities.

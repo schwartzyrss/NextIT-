@@ -21,6 +21,9 @@ public class SkillService {
     public void save(TechnicalSkill skill) {
         Validator.notBlank(skill.getSkillName(), "Skill name");
         Validator.notBlank(skill.getCategory(), "Category");
+        Validator.maxLength(skill.getSkillName(), 100, "Skill name");
+        Validator.maxLength(skill.getCategory(), 100, "Category");
+        Validator.maxLength(skill.getDescription(), 16000, "Description");
         String name = skill.getSkillName().trim();
         skillRepo.findAll().stream()
                 .filter(other -> other.getSkillId() != skill.getSkillId())

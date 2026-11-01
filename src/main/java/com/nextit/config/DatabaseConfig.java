@@ -16,17 +16,16 @@ public final class DatabaseConfig {
 
     private static final Properties DOT_ENV = loadDotEnv();
 
-    private static final String URL = value("NEXTIT_DB_URL", DEFAULT_URL);
-    private static final String USER = value("NEXTIT_DB_USER", "root");
-    private static final String PASSWORD = value("NEXTIT_DB_PASSWORD", "");
-
     private DatabaseConfig() {}
 
-    public static String url() { return URL; }
-    public static String user() { return USER; }
+    // Resolved on every call so tests can point the application at an embedded
+    // database after the configuration class has already been loaded.
+    public static String url() { return value("NEXTIT_DB_URL", DEFAULT_URL); }
+    public static String user() { return value("NEXTIT_DB_USER", "root"); }
+    public static String password() { return value("NEXTIT_DB_PASSWORD", ""); }
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+        return DriverManager.getConnection(url(), user(), password());
     }
 
     /**

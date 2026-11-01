@@ -1,25 +1,25 @@
 package com.nextit;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@EnabledIfEnvironmentVariable(named = "NEXTIT_TEST_DB_URL", matches = "^jdbc:mysql:.*$")
 class DatabaseSchemaIntegrationTest {
+
+    private static DatabaseTestServer database;
 
     private record ForeignKey(String table, String column, String referencedTable, String referencedColumn) {}
     private record Column(String type, int size, boolean nullable) {}
@@ -366,15 +366,16 @@ class DatabaseSchemaIntegrationTest {
         assertTrue(missing.isEmpty(), () -> "Database is missing foreign-key relationships: " + missing);
     }
 
-    private static Connection openTestConnection() throws SQLException {
-        Properties properties = new Properties();
-        addIfPresent(properties, "user", System.getenv("NEXTIT_TEST_DB_USER"));
-        addIfPresent(properties, "password", System.getenv("NEXTIT_TEST_DB_PASSWORD"));
-        return DriverManager.getConnection(System.getenv("NEXTIT_TEST_DB_URL"), properties);
+    @BeforeAll
+    static void startDatabase() throws SQLException {
+        database = DatabaseTestServer.getInstance();
     }
 
-    private static void addIfPresent(Properties properties, String key, String value) {
-        if (value != null && !value.isBlank()) properties.setProperty(key, value);
+    // The embedded database is intentionally shared with the other integration
+    // tests and is stopped by the JVM shutdown hook registered by DatabaseTestServer.
+
+    private static Connection openTestConnection() throws SQLException {
+        return database.openConnection();
     }
 
     private static TableSchema schema(String primaryKey, Map<String, TableColumn> columns,

@@ -19,6 +19,16 @@ public class JdbcCertificationRepository {
         } catch (SQLException e) { throw new AppException("Failed to load certifications", e); }
     }
 
+    public List<Certification> findAll() {
+        List<Certification> list = new ArrayList<>();
+        try (Connection c = DatabaseConfig.getConnection();
+             Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery("SELECT * FROM certifications ORDER BY certification_id")) {
+            while (rs.next()) list.add(map(rs));
+            return list;
+        } catch (SQLException e) { throw new AppException("Failed to load certifications", e); }
+    }
+
     public java.util.Optional<Certification> findById(int certificationId) {
         try (Connection c = DatabaseConfig.getConnection();
              PreparedStatement ps = c.prepareStatement("SELECT * FROM certifications WHERE certification_id=?")) {

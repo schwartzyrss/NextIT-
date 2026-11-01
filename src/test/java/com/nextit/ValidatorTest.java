@@ -49,4 +49,19 @@ class ValidatorTest {
         assertThrows(AppException.class, () -> Validator.optionalWebUrl("github.com/example", "Repository URL"));
         assertThrows(AppException.class, () -> Validator.optionalWebUrl("ftp://example.com", "Repository URL"));
     }
+
+    @Test
+    void maxLengthAllowsNullAndExactLimit() {
+        assertDoesNotThrow(() -> Validator.maxLength(null, 5, "Code"));
+        assertDoesNotThrow(() -> Validator.maxLength("ABCDE", 5, "Code"));
+        assertDoesNotThrow(() -> Validator.maxLength("", 5, "Code"));
+    }
+
+    @Test
+    void maxLengthRejectsTextThatWouldNotFitTheColumn() {
+        AppException error = assertThrows(AppException.class,
+                () -> Validator.maxLength("ABCDEF", 5, "Subject code"));
+        assertTrue(error.getMessage().contains("Subject code"));
+        assertTrue(error.getMessage().contains("5"));
+    }
 }
