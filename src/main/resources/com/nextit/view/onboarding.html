@@ -471,6 +471,19 @@
         }
       },
 
+      handlePaste(e) {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
+        if (text) {
+          for (let i = 0; i < 6 && i < text.length; i++) {
+            this.otp[i] = text[i];
+          }
+          const nextIdx = Math.min(5, text.length);
+          const el = document.getElementById('otp-' + nextIdx);
+          if (el) el.focus();
+        }
+      },
+
       handleOtpBackspace(e, index) {
         if (e.key === 'Backspace' && !this.otp[index] && index > 0) {
           const prevInput = document.getElementById('otp-' + (index - 1));
@@ -511,6 +524,8 @@
       },
 
       launchDashboard() {
+        if (this.isSubmitting) return;
+        this.isSubmitting = true;
         if (window.javaBridge) {
           window.javaBridge.registerAndLaunch(
             this.role,
@@ -525,6 +540,7 @@
           );
         } else {
           alert('Redirecting to your NextIT ' + this.roles[this.role].title + ' Dashboard!');
+          setTimeout(() => { this.isSubmitting = false; }, 1500);
         }
       },
 
@@ -926,6 +942,7 @@
                 x-model="otp[idx]"
                 @input="handleOtpInput($event, idx)"
                 @keydown="handleOtpBackspace($event, idx)"
+                @paste="handlePaste($event)"
                 class="clay-otp-pill"
               />
             </template>
@@ -988,8 +1005,10 @@
           <button 
             @click="launchDashboard()" 
             class="clay-btn-pill-primary px-10 py-3.5 text-base"
+            :disabled="isSubmitting"
           >
-            Launch <span class="capitalize" x-text="roles[role].title"></span> Dashboard 🚀
+            <span x-show="!isSubmitting">Launch <span class="capitalize" x-text="roles[role].title"></span> Dashboard 🚀</span>
+            <span x-show="isSubmitting">Initializing Workspace...</span>
           </button>
         </div>
 

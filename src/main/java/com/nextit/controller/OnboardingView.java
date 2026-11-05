@@ -32,12 +32,31 @@ import java.net.URL;
 import java.security.SecureRandom;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class OnboardingView {
 
     private static final Logger log = LoggerFactory.getLogger(OnboardingView.class);
-    private static final Map<String, String> ACTIVE_OTPS = new ConcurrentHashMap<>();
+
+    private static class OtpRecord {
+        final String code;
+        final long expiresAt;
+        final long resendAvailableAt;
+        int failedAttempts;
+
+        OtpRecord(String code, long expiresAt, long resendAvailableAt) {
+            this.code = code;
+            this.expiresAt = expiresAt;
+            this.resendAvailableAt = resendAvailableAt;
+            this.failedAttempts = 0;
+        }
+    }
+
+    private static final Map<String, OtpRecord> ACTIVE_OTPS = new ConcurrentHashMap<>();
+    private static final long OTP_TTL_MS = 10 * 60 * 1000;       // 10 minutes
+    private static final long COOLDOWN_MS = 30 * 1000;          // 30 seconds
+    private static final int MAX_FAILED_ATTEMPTS = 5;
 
     public static void open(Stage stage) {
         try {
@@ -65,6 +84,9 @@ public class OnboardingView {
             engine.load(htmlUrl.toExternalForm());
 
             StackPane root = new StackPane(webView);
+            webView.prefWidthProperty().bind(root.widthProperty());
+            webView.prefHeightProperty().bind(root.heightProperty());
+
             Scene scene = new Scene(root, 1150, 750);
             stage.setTitle("NextIT: Account Onboarding & Role Selection");
             stage.setScene(scene);
@@ -86,26 +108,54 @@ public class OnboardingView {
 
         public String requestOtp(String email) {
             String cleanEmail = (email != null) ? email.trim().toLowerCase() : "";
+            long now = System.currentTimeMillis();
+
+            OtpRecord existing = ACTIVE_OTPS.get(cleanEmail);
+            if (existing != null && now < existing.resendAvailableAt) {
+                // Rate limited
+                return String.format("{\"sent\":false,\"configured\":%b,\"code\":\"%s\",\"rateLimited\":true}",
+                        EmailService.isConfigured(), existing.code);
+            }
+
             String code = String.format("%06d", new SecureRandom().nextInt(1000000));
-            ACTIVE_OTPS.put(cleanEmail, code);
+            ACTIVE_OTPS.put(cleanEmail, new OtpRecord(code, now + OTP_TTL_MS, now + COOLDOWN_MS));
 
             boolean sent = EmailService.sendOtpEmail(cleanEmail, code);
             boolean configured = EmailService.isConfigured();
 
             log.info("Requested OTP for {}: code={}, sent={}, smtpConfigured={}", cleanEmail, code, sent, configured);
-            return String.format("{\"sent\":%b,\"configured\":%b,\"code\":\"%s\"}", sent, configured, code);
+            return String.format("{\"sent\":%b,\"configured\":%b,\"code\":\"%s\",\"rateLimited\":false}", sent, configured, code);
         }
 
         public boolean verifyOtp(String email, String enteredCode) {
             if (email == null || enteredCode == null) return false;
             String cleanEmail = email.trim().toLowerCase();
-            String stored = ACTIVE_OTPS.get(cleanEmail);
-            return stored != null && stored.trim().equals(enteredCode.trim());
+            long now = System.currentTimeMillis();
+
+            OtpRecord record = ACTIVE_OTPS.get(cleanEmail);
+            if (record == null) return false;
+
+            if (now > record.expiresAt || record.failedAttempts >= MAX_FAILED_ATTEMPTS) {
+                ACTIVE_OTPS.remove(cleanEmail);
+                return false;
+            }
+
+            if (record.code.equals(enteredCode.trim())) {
+                ACTIVE_OTPS.remove(cleanEmail); // Single use
+                return true;
+            }
+
+            record.failedAttempts++;
+            if (record.failedAttempts >= MAX_FAILED_ATTEMPTS) {
+                ACTIVE_OTPS.remove(cleanEmail);
+            }
+            return false;
         }
 
         public void registerAndLaunch(String roleStr, String username, String firstName, String lastName,
                                       String email, String password, String detail1, String detail2, String detail3) {
-            Platform.runLater(() -> {
+            // Run database queries on a background thread to prevent UI freezing
+            CompletableFuture.runAsync(() -> {
                 try {
                     Role role = Role.valueOf(roleStr.trim().toUpperCase());
                     String uName = (username != null && !username.isBlank())
@@ -114,7 +164,6 @@ public class OnboardingView {
 
                     JdbcUserRepository userRepo = new JdbcUserRepository();
 
-                    // Check if user already exists with username or email
                     Optional<User> existing = userRepo.findByUsername(uName);
                     if (existing.isEmpty() && email != null && !email.isBlank()) {
                         existing = userRepo.findByEmail(email.trim());
@@ -123,7 +172,11 @@ public class OnboardingView {
                     User user;
                     if (existing.isPresent()) {
                         user = existing.get();
-                        log.info("User already exists, logging into existing account: {}", user.getUsername());
+                        // Validate credentials if user already exists
+                        if (password != null && !password.isBlank() && !AuthenticationService.verifyPassword(password, user.getPasswordHash())) {
+                            throw new AppException("An account with this username or email already exists. Please verify your password or sign in directly.");
+                        }
+                        log.info("User already exists with valid credentials, logging into existing account: {}", user.getUsername());
                     } else {
                         user = new User();
                         user.setUsername(uName);
@@ -173,19 +226,26 @@ public class OnboardingView {
                     // Authenticate session
                     Session.login(user);
 
-                    // Transition to Main Layout
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/nextit/view/MainLayout.fxml"));
-                    BorderPane root = loader.load();
-                    AppController appController = loader.getController();
-                    Scene scene = new Scene(root, 1100, 700);
-                    scene.getStylesheets().add(getClass().getResource("/com/nextit/css/application.css").toExternalForm());
-                    stage.setTitle("NextIT: Track Your Progress, Build Your Future");
-                    stage.setScene(scene);
-                    stage.centerOnScreen();
-                    appController.initialize(stage, user);
+                    // Update UI on JavaFX thread
+                    Platform.runLater(() -> {
+                        try {
+                            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/nextit/view/MainLayout.fxml"));
+                            BorderPane root = loader.load();
+                            AppController appController = loader.getController();
+                            Scene scene = new Scene(root, 1100, 700);
+                            scene.getStylesheets().add(getClass().getResource("/com/nextit/css/application.css").toExternalForm());
+                            stage.setTitle("NextIT: Track Your Progress, Build Your Future");
+                            stage.setScene(scene);
+                            stage.centerOnScreen();
+                            appController.initialize(stage, user);
+                        } catch (Exception e) {
+                            log.error("Failed to load main layout view", e);
+                            Alerts.error("Could not load dashboard: " + e.getMessage());
+                        }
+                    });
                 } catch (Exception e) {
                     log.error("Failed to complete registration and launch dashboard", e);
-                    Alerts.error("Could not complete registration: " + e.getMessage());
+                    Platform.runLater(() -> Alerts.error("Registration failed: " + e.getMessage()));
                 }
             });
         }

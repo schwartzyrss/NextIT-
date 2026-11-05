@@ -26,6 +26,7 @@ public final class EmailService {
     public static boolean isConfigured() {
         String user = getSetting("SMTP_USER", null);
         String pass = getSetting("SMTP_PASSWORD", null);
+        if (pass == null) pass = getSetting("SMTP_PASS", null);
         return user != null && !user.isBlank() && pass != null && !pass.isBlank();
     }
 
@@ -35,17 +36,31 @@ public final class EmailService {
             return false;
         }
 
-        String host = getSetting("SMTP_HOST", "smtp.gmail.com");
-        String port = getSetting("SMTP_PORT", "587");
-        String username = getSetting("SMTP_USER", "");
-        String password = getSetting("SMTP_PASSWORD", "");
-        String fromAddress = getSetting("SMTP_FROM", username);
+        String host = getSetting("SMTP_HOST", "smtp.gmail.com").trim();
+        String port = getSetting("SMTP_PORT", "587").trim();
+        String username = getSetting("SMTP_USER", "").trim();
+        String rawPassword = getSetting("SMTP_PASSWORD", getSetting("SMTP_PASS", ""));
+        String password = rawPassword != null ? rawPassword.replace(" ", "").trim() : "";
+        String fromAddress = getSetting("SMTP_FROM", username).trim();
+
+        boolean isSsl = "465".equals(port) || "true".equalsIgnoreCase(getSetting("SMTP_SECURE", "false"));
 
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", host);
         props.put("mail.smtp.port", port);
+        props.put("mail.smtp.connectiontimeout", "10000");
+        props.put("mail.smtp.timeout", "10000");
+        props.put("mail.smtp.writetimeout", "10000");
+
+        if (isSsl) {
+            props.put("mail.smtp.ssl.enable", "true");
+            props.put("mail.smtp.socketFactory.port", port);
+            props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+        } else {
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.starttls.required", "true");
+        }
         props.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
 
         try {
@@ -57,8 +72,15 @@ public final class EmailService {
             });
 
             Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(fromAddress, "NextIT Verification"));
-            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
+
+            InternetAddress from;
+            if (fromAddress.contains("<") && fromAddress.contains(">")) {
+                from = InternetAddress.parse(fromAddress)[0];
+            } else {
+                from = new InternetAddress(fromAddress, "NextIT Verification");
+            }
+            message.setFrom(from);
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail.trim()));
             message.setSubject("Your NextIT Verification Code: " + otpCode);
 
             String htmlContent = """
@@ -121,4 +143,3 @@ public final class EmailService {
         return properties;
     }
 }
-
