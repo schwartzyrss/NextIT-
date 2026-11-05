@@ -1,5 +1,8 @@
 package com.nextit.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -11,6 +14,8 @@ import java.util.Properties;
 
 public final class DatabaseConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(DatabaseConfig.class);
+
     private static final String DEFAULT_URL =
             "jdbc:mysql://localhost:3306/nextit?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
 
@@ -20,12 +25,42 @@ public final class DatabaseConfig {
 
     // Resolved on every call so tests can point the application at an embedded
     // database after the configuration class has already been loaded.
-    public static String url() { return value("NEXTIT_DB_URL", DEFAULT_URL); }
-    public static String user() { return value("NEXTIT_DB_USER", "root"); }
-    public static String password() { return value("NEXTIT_DB_PASSWORD", ""); }
+    public static String url() {
+        return value("SUPABASE_DB_URL", value("NEXTIT_DB_URL", DEFAULT_URL));
+    }
+
+    public static String user() {
+        return value("SUPABASE_DB_USER", value("NEXTIT_DB_USER", "root"));
+    }
+
+    public static String password() {
+        return value("SUPABASE_DB_PASSWORD", value("NEXTIT_DB_PASSWORD", ""));
+    }
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(url(), user(), password());
+        String dbUrl = url();
+        try {
+            if (dbUrl.startsWith("jdbc:postgresql:")) {
+                try {
+                    Class.forName("org.postgresql.Driver");
+                } catch (ClassNotFoundException ignored) {}
+            }
+            return DriverManager.getConnection(dbUrl, user(), password());
+        } catch (SQLException ex) {
+            log.error("Database connection to {} failed: {}", dbUrl, ex.getMessage());
+            if (EmbeddedDatabaseManager.shouldFallback(dbUrl)) {
+                log.info("Falling back to local embedded database...");
+                DOT_ENV.remove("SUPABASE_DB_URL");
+                DOT_ENV.remove("SUPABASE_DB_USER");
+                DOT_ENV.remove("SUPABASE_DB_PASSWORD");
+                System.clearProperty("SUPABASE_DB_URL");
+                System.clearProperty("SUPABASE_DB_USER");
+                System.clearProperty("SUPABASE_DB_PASSWORD");
+                EmbeddedDatabaseManager.ensureStarted();
+                return DriverManager.getConnection(url(), user(), password());
+            }
+            throw ex;
+        }
     }
 
     /**

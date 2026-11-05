@@ -7,8 +7,10 @@ import com.nextit.service.*;
 import com.nextit.util.Alerts;
 import com.nextit.util.Ui;
 import javafx.collections.FXCollections;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.layout.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -46,14 +48,83 @@ public final class InstructorViews {
         User account = profiles.account(Session.currentUser().getUserId());
         Instructor instructor = profiles.instructorForUser(account.getUserId())
                 .orElseThrow(() -> new AppException("Instructor profile not found."));
-        Node form = Ui.form(
-                new String[]{"Username", "Email", "Full name", "Role", "Employee number", "Department", "Specialization"},
-                new Node[]{new Label(value(account.getUsername())), new Label(value(account.getEmail())),
-                        new Label(value(account.getFullName())), new Label(String.valueOf(account.getRole())),
-                        new Label(value(instructor.getEmployeeNumber())), new Label(value(instructor.getDepartment())),
-                        new Label(value(instructor.getSpecialization()))});
+
+        HBox hero = new HBox(20);
+        hero.setAlignment(Pos.CENTER_LEFT);
+        hero.getStyleClass().add("profile-hero-card");
+
+        StackPane avatar = Ui.avatar(Ui.initials(account.getFullName()), "avatar-mint");
+
+        VBox identityDetails = new VBox(6);
+        Label nameLabel = new Label(value(account.getFullName()));
+        nameLabel.getStyleClass().add("profile-hero-name");
+
+        HBox badges = new HBox(8);
+        badges.setAlignment(Pos.CENTER_LEFT);
+        badges.getChildren().addAll(
+                Ui.badge("@" + account.getUsername(), "badge-pill-cream"),
+                Ui.badge(String.valueOf(account.getRole()), "badge-pill-mint"),
+                Ui.badge(value(instructor.getDepartment()), "badge-pill-lavender")
+        );
+        identityDetails.getChildren().addAll(nameLabel, badges);
+
+        Region heroSpacer = new Region();
+        HBox.setHgrow(heroSpacer, Priority.ALWAYS);
+
+        VBox heroRight = new VBox(6);
+        heroRight.setAlignment(Pos.CENTER_RIGHT);
+        Label deptHighlight = new Label(value(instructor.getDepartment()));
+        deptHighlight.getStyleClass().add("profile-hero-highlight-title");
+        Label specHighlight = new Label(value(instructor.getSpecialization()));
+        specHighlight.getStyleClass().add("profile-hero-highlight-subtitle");
+        heroRight.getChildren().addAll(deptHighlight, specHighlight);
+
+        hero.getChildren().addAll(avatar, identityDetails, heroSpacer, heroRight);
+
+        // Account tray
+        GridPane accountGrid = new GridPane();
+        accountGrid.setHgap(16);
+        accountGrid.setVgap(14);
+        ColumnConstraints col1 = new ColumnConstraints();
+        col1.setPercentWidth(50);
+        ColumnConstraints col2 = new ColumnConstraints();
+        col2.setPercentWidth(50);
+        accountGrid.getColumnConstraints().addAll(col1, col2);
+
+        accountGrid.add(Ui.propertyTile("Username", value(account.getUsername())), 0, 0);
+        accountGrid.add(Ui.propertyTile("Email Address", value(account.getEmail())), 1, 0);
+        accountGrid.add(Ui.propertyTile("Full Name", value(account.getFullName())), 0, 1);
+        accountGrid.add(Ui.propertyTile("Account Role", Ui.badge(String.valueOf(account.getRole()), "badge-pill-mint")), 1, 1);
+
+        VBox accountTray = Ui.tray("Account Details", "Your personal login and credentials in NextIT", accountGrid);
+        HBox.setHgrow(accountTray, Priority.ALWAYS);
+
+        // Department tray
+        GridPane deptGrid = new GridPane();
+        deptGrid.setHgap(16);
+        deptGrid.setVgap(14);
+        deptGrid.getColumnConstraints().addAll(col1, col2);
+
+        deptGrid.add(Ui.propertyTile("Employee Number", value(instructor.getEmployeeNumber())), 0, 0);
+        deptGrid.add(Ui.propertyTile("Department", value(instructor.getDepartment())), 1, 0);
+        deptGrid.add(Ui.propertyTile("Specialization", value(instructor.getSpecialization())), 0, 1);
+        deptGrid.add(Ui.propertyTile("Status", Ui.badge("Active Faculty", "badge-pill-mint")), 1, 1);
+
+        VBox deptTray = Ui.tray("Faculty & Department", "Academic department assignment and subject specialization", deptGrid);
+        HBox.setHgrow(deptTray, Priority.ALWAYS);
+
+        HBox traysRow = new HBox(20, accountTray, deptTray);
+
+        HBox notice = new HBox(12);
+        notice.getStyleClass().add("profile-notice-cushion");
+        Label noticeIcon = new Label("ℹ");
+        noticeIcon.getStyleClass().add("profile-notice-icon");
+        Label noticeText = new Label("Faculty assignments and instructor records are managed by the academic administration.");
+        noticeText.getStyleClass().add("profile-notice-text");
+        notice.getChildren().addAll(noticeIcon, noticeText);
+
         return Ui.page("My Profile", "Your account and instructor profile information. Contact an administrator if any details need correction.",
-                form);
+                hero, traysRow, notice);
     }
 
     public static Node students() {

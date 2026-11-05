@@ -45,7 +45,7 @@ public class JdbcJobOpportunityRepository {
              Statement st = c.createStatement();
              ResultSet rs = st.executeQuery(
                      "SELECT * FROM job_opportunities WHERE status='Open' "
-                             + "AND (deadline IS NULL OR deadline >= CURDATE())")) {
+                             + "AND (deadline IS NULL OR deadline >= CURRENT_DATE)")) {
             while (rs.next()) list.add(map(rs));
             return list;
         } catch (SQLException e) { throw new AppException("Failed to load opportunities", e); }

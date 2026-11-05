@@ -12,8 +12,10 @@ import com.nextit.service.SystemService;
 import com.nextit.util.Alerts;
 import com.nextit.util.Ui;
 import javafx.collections.FXCollections;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.layout.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -35,10 +37,57 @@ public final class AdminViews {
 
     public static Node profile() {
         User account = profiles.account(com.nextit.security.Session.currentUser().getUserId());
-        Node form = Ui.form(new String[]{"Username", "Email", "Full name", "Role"},
-                new Node[]{new Label(value(account.getUsername())), new Label(value(account.getEmail())),
-                        new Label(value(account.getFullName())), new Label(String.valueOf(account.getRole()))});
-        return Ui.page("My Profile", "Your administrator account information.", form);
+
+        HBox hero = new HBox(20);
+        hero.setAlignment(Pos.CENTER_LEFT);
+        hero.getStyleClass().add("profile-hero-card");
+
+        StackPane avatar = Ui.avatar(Ui.initials(account.getFullName()), "avatar-pink");
+
+        VBox identityDetails = new VBox(6);
+        Label nameLabel = new Label(value(account.getFullName()));
+        nameLabel.getStyleClass().add("profile-hero-name");
+
+        HBox badges = new HBox(8);
+        badges.setAlignment(Pos.CENTER_LEFT);
+        badges.getChildren().addAll(
+                Ui.badge("@" + account.getUsername(), "badge-pill-cream"),
+                Ui.badge(String.valueOf(account.getRole()), "badge-pill-pink"),
+                Ui.badge("Superuser", "badge-pill-mint")
+        );
+        identityDetails.getChildren().addAll(nameLabel, badges);
+
+        Region heroSpacer = new Region();
+        HBox.setHgrow(heroSpacer, Priority.ALWAYS);
+
+        VBox heroRight = new VBox(6);
+        heroRight.setAlignment(Pos.CENTER_RIGHT);
+        Label roleHighlight = new Label("Administrator Access");
+        roleHighlight.getStyleClass().add("profile-hero-highlight-title");
+        Label statusHighlight = new Label("Full System Permissions");
+        statusHighlight.getStyleClass().add("profile-hero-highlight-subtitle");
+        heroRight.getChildren().addAll(roleHighlight, statusHighlight);
+
+        hero.getChildren().addAll(avatar, identityDetails, heroSpacer, heroRight);
+
+        GridPane accountGrid = new GridPane();
+        accountGrid.setHgap(16);
+        accountGrid.setVgap(14);
+        ColumnConstraints col1 = new ColumnConstraints();
+        col1.setPercentWidth(50);
+        ColumnConstraints col2 = new ColumnConstraints();
+        col2.setPercentWidth(50);
+        accountGrid.getColumnConstraints().addAll(col1, col2);
+
+        accountGrid.add(Ui.propertyTile("Username", value(account.getUsername())), 0, 0);
+        accountGrid.add(Ui.propertyTile("Email Address", value(account.getEmail())), 1, 0);
+        accountGrid.add(Ui.propertyTile("Full Name", value(account.getFullName())), 0, 1);
+        accountGrid.add(Ui.propertyTile("Account Role", Ui.badge(String.valueOf(account.getRole()), "badge-pill-pink")), 1, 1);
+
+        VBox accountTray = Ui.tray("Administrator Credentials", "System authentication details and security clearance", accountGrid);
+        HBox.setHgrow(accountTray, Priority.ALWAYS);
+
+        return Ui.page("My Profile", "Your administrator account information.", hero, accountTray);
     }
 
     public static Node dashboard() {

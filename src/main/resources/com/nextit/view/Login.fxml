@@ -16,7 +16,7 @@
     <padding><Insets top="40" right="40" bottom="40" left="40"/></padding>
     <Text text="NextIT" styleClass="app-title"/>
     <Label text="Track Your Progress, Build Your Future" styleClass="app-subtitle"/>
-    <VBox spacing="8" styleClass="login-card" maxWidth="360">
+    <VBox spacing="10" styleClass="login-card" maxWidth="360">
         <Label text="Username or Email"/>
         <TextField fx:id="usernameField" promptText="Enter username or email"/>
         <Label text="Password"/>
@@ -26,6 +26,7 @@
         </StackPane>
         <CheckBox fx:id="showPasswordCheck" text="Show password" onAction="#togglePassword"/>
         <Button text="Login" onAction="#handleLogin" maxWidth="Infinity" styleClass="primary-button"/>
+        <Button text="Create an Account" onAction="#handleOpenOnboarding" maxWidth="Infinity" styleClass="secondary-button"/>
         <Label fx:id="errorLabel" styleClass="error-label"/>
     </VBox>
     <Region/>

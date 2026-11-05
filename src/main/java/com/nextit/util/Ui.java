@@ -22,15 +22,90 @@ public final class Ui {
 
     private Ui() {}
 
+        private static int cardCounter = 0;
+    private static final String[] CLAY_VARIANTS = {
+        "card-cream", "card-mint", "card-lavender", "card-pink", "card-yellow", "card-blue"
+    };
+
     public static VBox page(String title, String subtitle, Node... content) {
-        VBox box = new VBox(16);
+        VBox box = new VBox(20);
         box.getStyleClass().add("page");
-        box.getChildren().add(title(title));
+        box.setFillWidth(true);
+        VBox headerBox = new VBox(6);
+        headerBox.getStyleClass().add("page-header-cushion");
+        headerBox.getChildren().add(title(title));
         if (subtitle != null && !subtitle.isBlank()) {
-            box.getChildren().add(subtitle(subtitle));
+            headerBox.getChildren().add(subtitle(subtitle));
         }
+        box.getChildren().add(headerBox);
         box.getChildren().addAll(content);
         return box;
+    }
+
+    public static String value(String text) {
+        return text == null ? "" : text;
+    }
+
+    public static String initials(String name) {
+        if (name == null || name.isBlank()) return "U";
+        String[] parts = name.trim().split("\\s+");
+        if (parts.length >= 2) {
+            return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
+        } else if (parts[0].length() >= 2) {
+            return parts[0].substring(0, 2).toUpperCase();
+        } else {
+            return parts[0].toUpperCase();
+        }
+    }
+
+    public static StackPane avatar(String initials, String styleClass) {
+        StackPane avatar = new StackPane();
+        avatar.getStyleClass().addAll("profile-avatar", styleClass);
+        Label initialsLabel = new Label(initials == null || initials.isBlank() ? "U" : initials);
+        initialsLabel.getStyleClass().add("profile-avatar-text");
+        avatar.getChildren().add(initialsLabel);
+        return avatar;
+    }
+
+    public static Label badge(String text, String colorVariant) {
+        Label label = new Label(text == null ? "" : text);
+        label.getStyleClass().addAll("badge-pill", colorVariant);
+        return label;
+    }
+
+    public static VBox propertyTile(String labelText, Node valueNode) {
+        VBox tile = new VBox(6);
+        tile.getStyleClass().add("profile-prop-tile");
+        Label label = new Label(labelText != null ? labelText.toUpperCase() : "");
+        label.getStyleClass().add("profile-prop-label");
+        tile.getChildren().addAll(label, valueNode);
+        return tile;
+    }
+
+    public static VBox propertyTile(String labelText, String valueText) {
+        Label valueLabel = new Label(valueText != null && !valueText.isBlank() ? valueText : "—");
+        valueLabel.getStyleClass().add("profile-prop-value");
+        return propertyTile(labelText, valueLabel);
+    }
+
+    public static VBox tray(String sectionTitle, String sectionSubtitle, Node... content) {
+        VBox tray = new VBox(16);
+        tray.getStyleClass().add("clay-tray");
+        tray.setFillWidth(true);
+        if (sectionTitle != null && !sectionTitle.isBlank()) {
+            VBox titleBox = new VBox(3);
+            Label title = new Label(sectionTitle);
+            title.getStyleClass().add("tray-title");
+            titleBox.getChildren().add(title);
+            if (sectionSubtitle != null && !sectionSubtitle.isBlank()) {
+                Label sub = new Label(sectionSubtitle);
+                sub.getStyleClass().add("tray-subtitle");
+                titleBox.getChildren().add(sub);
+            }
+            tray.getChildren().add(titleBox);
+        }
+        tray.getChildren().addAll(content);
+        return tray;
     }
 
     public static Label title(String text) {
@@ -51,9 +126,10 @@ public final class Ui {
         return label;
     }
 
-    public static VBox card(String label, String value) {
-        VBox box = new VBox(4);
+        public static VBox card(String label, String value) {
+        VBox box = new VBox(6);
         box.getStyleClass().add("card");
+        box.getStyleClass().add(CLAY_VARIANTS[Math.abs(cardCounter++) % CLAY_VARIANTS.length]);
         Label val = new Label(value);
         val.getStyleClass().add("card-value");
         Label name = new Label(label);
@@ -118,11 +194,12 @@ public final class Ui {
             throw new IllegalArgumentException("Every form field needs a label.");
         }
         GridPane grid = new GridPane();
-        grid.setHgap(12);
-        grid.setVgap(10);
+        grid.setHgap(16);
+        grid.setVgap(14);
         grid.getStyleClass().add("form-grid");
         for (int i = 0; i < labels.length; i++) {
             Label label = new Label(labels[i]);
+            label.getStyleClass().add("form-label");
             grid.add(label, 0, i);
             grid.add(controls[i], 1, i);
             if (controls[i] instanceof Region region) {
@@ -130,7 +207,7 @@ public final class Ui {
             }
         }
         ColumnConstraints labelColumn = new ColumnConstraints();
-        labelColumn.setMinWidth(130);
+        labelColumn.setMinWidth(150);
         ColumnConstraints controlColumn = new ColumnConstraints();
         controlColumn.setHgrow(Priority.ALWAYS);
         grid.getColumnConstraints().addAll(labelColumn, controlColumn);
@@ -175,6 +252,7 @@ public final class Ui {
         dialog.setTitle(title);
         dialog.setHeaderText(null);
         dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getStylesheets().add(Ui.class.getResource("/com/nextit/css/application.css").toExternalForm());
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
         dialog.setResizable(true);
         return dialog.showAndWait();
@@ -186,6 +264,7 @@ public final class Ui {
         dialog.setTitle(title);
         dialog.setHeaderText(null);
         dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getStylesheets().add(Ui.class.getResource("/com/nextit/css/application.css").toExternalForm());
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         dialog.setResizable(true);
         dialog.showAndWait();

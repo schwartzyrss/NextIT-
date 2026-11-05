@@ -7,11 +7,10 @@ import com.nextit.service.*;
 import com.nextit.util.Alerts;
 import com.nextit.util.Ui;
 import javafx.collections.FXCollections;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -40,16 +39,87 @@ public final class StudentViews {
         User account = profiles.account(Session.currentUser().getUserId());
         Student student = profiles.studentForUser(account.getUserId())
                 .orElseThrow(() -> new AppException("Student profile not found."));
-        Node form = Ui.form(
-                new String[]{"Username", "Email", "Full name", "Role", "Student number", "Program",
-                        "Year level", "Section", "Enrollment status"},
-                new Node[]{new Label(value(account.getUsername())), new Label(value(account.getEmail())),
-                        new Label(value(account.getFullName())), new Label(String.valueOf(account.getRole())),
-                        new Label(value(student.getStudentNumber())), new Label(value(student.getProgram())),
-                        new Label(String.valueOf(student.getYearLevel())), new Label(value(student.getSection())),
-                        new Label(value(student.getEnrollmentStatus()))});
+
+        // 1. Identity Hero Cushion
+        HBox hero = new HBox(20);
+        hero.setAlignment(Pos.CENTER_LEFT);
+        hero.getStyleClass().add("profile-hero-card");
+
+        StackPane avatar = Ui.avatar(Ui.initials(account.getFullName()), "avatar-lavender");
+
+        VBox identityDetails = new VBox(6);
+        Label nameLabel = new Label(value(account.getFullName()));
+        nameLabel.getStyleClass().add("profile-hero-name");
+
+        HBox badges = new HBox(8);
+        badges.setAlignment(Pos.CENTER_LEFT);
+        badges.getChildren().addAll(
+                Ui.badge("@" + account.getUsername(), "badge-pill-cream"),
+                Ui.badge(String.valueOf(account.getRole()), "badge-pill-lavender"),
+                Ui.badge(value(student.getEnrollmentStatus()), "badge-pill-mint")
+        );
+        identityDetails.getChildren().addAll(nameLabel, badges);
+
+        Region heroSpacer = new Region();
+        HBox.setHgrow(heroSpacer, Priority.ALWAYS);
+
+        VBox heroRight = new VBox(6);
+        heroRight.setAlignment(Pos.CENTER_RIGHT);
+        Label programHighlight = new Label(value(student.getProgram()));
+        programHighlight.getStyleClass().add("profile-hero-highlight-title");
+        Label yearSectionHighlight = new Label("Year " + student.getYearLevel() + " • Section " + value(student.getSection()));
+        yearSectionHighlight.getStyleClass().add("profile-hero-highlight-subtitle");
+        heroRight.getChildren().addAll(programHighlight, yearSectionHighlight);
+
+        hero.getChildren().addAll(avatar, identityDetails, heroSpacer, heroRight);
+
+        // 2. Account Information Tray
+        GridPane accountGrid = new GridPane();
+        accountGrid.setHgap(16);
+        accountGrid.setVgap(14);
+        ColumnConstraints col1 = new ColumnConstraints();
+        col1.setPercentWidth(50);
+        ColumnConstraints col2 = new ColumnConstraints();
+        col2.setPercentWidth(50);
+        accountGrid.getColumnConstraints().addAll(col1, col2);
+
+        accountGrid.add(Ui.propertyTile("Username", value(account.getUsername())), 0, 0);
+        accountGrid.add(Ui.propertyTile("Email Address", value(account.getEmail())), 1, 0);
+        accountGrid.add(Ui.propertyTile("Full Name", value(account.getFullName())), 0, 1);
+        accountGrid.add(Ui.propertyTile("Account Role", Ui.badge(String.valueOf(account.getRole()), "badge-pill-lavender")), 1, 1);
+
+        VBox accountTray = Ui.tray("Account Details", "Your personal credentials and access role in NextIT", accountGrid);
+        HBox.setHgrow(accountTray, Priority.ALWAYS);
+
+        // 3. Academic & Enrollment Information Tray
+        GridPane academicGrid = new GridPane();
+        academicGrid.setHgap(16);
+        academicGrid.setVgap(14);
+        academicGrid.getColumnConstraints().addAll(col1, col2);
+
+        academicGrid.add(Ui.propertyTile("Student Number", value(student.getStudentNumber())), 0, 0);
+        academicGrid.add(Ui.propertyTile("Degree Program", value(student.getProgram())), 1, 0);
+        academicGrid.add(Ui.propertyTile("Year Level", "Year " + student.getYearLevel()), 0, 1);
+        academicGrid.add(Ui.propertyTile("Class Section", "Section " + value(student.getSection())), 1, 1);
+        academicGrid.add(Ui.propertyTile("Enrollment Status", Ui.badge(value(student.getEnrollmentStatus()), "badge-pill-mint")), 0, 2);
+
+        VBox academicTray = Ui.tray("Academic Standing", "Course program placement and enrollment registration", academicGrid);
+        HBox.setHgrow(academicTray, Priority.ALWAYS);
+
+        HBox traysRow = new HBox(20, accountTray, academicTray);
+
+        // 4. Notice Cushion
+        HBox notice = new HBox(12);
+        notice.getStyleClass().add("profile-notice-cushion");
+        Label noticeIcon = new Label("ℹ");
+        noticeIcon.getStyleClass().add("profile-notice-icon");
+        Label noticeText = new Label("Student records and credentials are synchronized with the registrar. Contact an administrator if any details need correction.");
+        noticeText.getStyleClass().add("profile-notice-text");
+        noticeText.setWrapText(true);
+        notice.getChildren().addAll(noticeIcon, noticeText);
+
         return Ui.page("My Profile", "Your account and student profile information. Contact an administrator if any details need correction.",
-                form);
+                hero, traysRow, notice);
     }
 
     public static Node dashboard() {
@@ -611,7 +681,7 @@ public final class StudentViews {
 
     private static Node portfolioPreview(int studentId, Portfolio p) {
         VBox content = new VBox(10);
-        content.setStyle("-fx-padding: 20; -fx-background-color: white;");
+        content.getStyleClass().add("card");
         Label name = new Label(Session.currentUser().getFullName());
         name.getStyleClass().add("page-title");
         Student student = directory.students().stream()

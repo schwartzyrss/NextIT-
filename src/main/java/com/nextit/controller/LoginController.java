@@ -9,6 +9,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +66,7 @@ public class LoginController {
             AppController appController = loader.getController();
             javafx.scene.Scene scene = new javafx.scene.Scene(root, 1100, 700);
             scene.getStylesheets().add(getClass().getResource("/com/nextit/css/application.css").toExternalForm());
-            javafx.stage.Stage stage = (javafx.stage.Stage) errorLabel.getScene().getWindow();
+            Stage stage = (Stage) errorLabel.getScene().getWindow();
             stage.setScene(scene);
             appController.initialize(stage, user);
         } catch (AppException e) {
@@ -78,6 +79,17 @@ public class LoginController {
             alert.setTitle("Error");
             alert.setContentText("Could not log in. Please check the database connection.");
             alert.show();
+        }
+    }
+
+    @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod") // invoked reflectively via onAction="#handleOpenOnboarding" in Login.fxml
+    private void handleOpenOnboarding() {
+        try {
+            Stage stage = (Stage) errorLabel.getScene().getWindow();
+            OnboardingView.open(stage);
+        } catch (Exception e) {
+            log.error("Failed to open onboarding flow", e);
         }
     }
 }

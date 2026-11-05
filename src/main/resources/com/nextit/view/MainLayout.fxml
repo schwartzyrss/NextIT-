@@ -11,18 +11,21 @@
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.nextit.controller.AppController" styleClass="app-root">
     <top>
-        <HBox spacing="16" style="-fx-padding: 12 20; -fx-background-color: #1f3b73;" alignment="CENTER_LEFT">
-            <Label fx:id="headerLabel" text="NextIT" style="-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;"/>
+        <HBox spacing="14" styleClass="app-header" alignment="CENTER_LEFT">
+            <Button fx:id="toggleSidebarButton" text="◀" onAction="#toggleSidebar" styleClass="sidebar-toggle-btn" focusTraversable="false"/>
+            <Label fx:id="headerLabel" text="NextIT" styleClass="app-header-title"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Label fx:id="userLabel" style="-fx-text-fill: #dbe4ff;"/>
+            <Label fx:id="userLabel" styleClass="app-header-user"/>
         </HBox>
     </top>
     <left>
-        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="sidebar-scroll">
-            <VBox fx:id="sidebar" spacing="8" styleClass="sidebar" style="-fx-padding: 16; -fx-min-width: 180;"/>
+        <ScrollPane fx:id="sidebarScroll" fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="sidebar-scroll">
+            <VBox fx:id="sidebar" spacing="10" styleClass="sidebar" maxHeight="Infinity"/>
         </ScrollPane>
     </left>
     <center>
-        <BorderPane fx:id="contentPane"/>
+        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="content-scroll">
+            <BorderPane fx:id="contentPane" styleClass="content-area"/>
+        </ScrollPane>
     </center>
 </BorderPane>

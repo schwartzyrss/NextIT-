@@ -8,7 +8,14 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -22,20 +29,44 @@ public class AppController {
     @FXML private Label userLabel;
     @FXML private BorderPane contentPane;
     @FXML private VBox sidebar;
+    @FXML private ScrollPane sidebarScroll;
+    @FXML private Button toggleSidebarButton;
 
     private Stage stage;
+    private Button activeNavButton;
 
     public void initialize(Stage stage, User user) {
         this.stage = stage;
         userLabel.setText(user.getFullName() + " (" + user.getRole() + ")");
+        if (toggleSidebarButton != null) {
+            toggleSidebarButton.setTooltip(new Tooltip("Toggle Sidebar (Ctrl+B)"));
+        }
+        if (stage != null && stage.getScene() != null) {
+            stage.getScene().getAccelerators().put(
+                    new KeyCodeCombination(KeyCode.B, KeyCombination.SHORTCUT_DOWN),
+                    this::toggleSidebar);
+        }
         buildSidebar(user);
         showDashboard(user);
+    }
+
+    @FXML
+    private void toggleSidebar() {
+        if (sidebarScroll == null) return;
+        boolean currentlyVisible = sidebarScroll.isVisible();
+        sidebarScroll.setVisible(!currentlyVisible);
+        sidebarScroll.setManaged(!currentlyVisible);
+        if (toggleSidebarButton != null) {
+            toggleSidebarButton.setText(currentlyVisible ? "☰" : "◀");
+            toggleSidebarButton.setTooltip(new Tooltip(currentlyVisible ? "Show Sidebar (Ctrl+B)" : "Hide Sidebar (Ctrl+B)"));
+        }
     }
 
     private void buildSidebar(User user) {
         sidebar.getChildren().clear();
         Button dashboard = navButton("Dashboard", () -> showDashboard(user));
         sidebar.getChildren().add(dashboard);
+        setActiveButton(dashboard);
         switch (user.getRole()) {
             case STUDENT -> {
                 sidebar.getChildren().add(navButton("Profile", () -> contentPane.setCenter(StudentViews.profile())));
@@ -93,15 +124,38 @@ public class AppController {
                 sidebar.getChildren().add(navButton("System", () -> contentPane.setCenter(AdminViews.system())));
             }
         }
-        Button logout = navButton("Logout", this::logout);
+
+        Region spacer = new Region();
+        spacer.setMinHeight(10);
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+        sidebar.getChildren().add(spacer);
+
+        Button logout = new Button("Logout");
+        logout.setMaxWidth(Double.MAX_VALUE);
+        logout.getStyleClass().addAll("sidebar-button", "sidebar-logout-button");
+        logout.setOnAction(e -> runSafely(this::confirmAndLogout));
         sidebar.getChildren().add(logout);
     }
 
     private Button navButton(String text, Runnable action) {
         Button b = new Button(text);
         b.setMaxWidth(Double.MAX_VALUE);
-        b.setOnAction(e -> runSafely(action));
+        b.getStyleClass().add("sidebar-button");
+        b.setOnAction(e -> {
+            setActiveButton(b);
+            runSafely(action);
+        });
         return b;
+    }
+
+    private void setActiveButton(Button b) {
+        if (activeNavButton != null) {
+            activeNavButton.getStyleClass().remove("sidebar-button-active");
+        }
+        activeNavButton = b;
+        if (activeNavButton != null) {
+            activeNavButton.getStyleClass().add("sidebar-button-active");
+        }
     }
 
     private void runSafely(Runnable action) {
@@ -122,6 +176,13 @@ public class AppController {
             case EMPLOYER -> contentPane.setCenter(EmployerViews.dashboard());
             case ADMIN -> contentPane.setCenter(AdminViews.dashboard());
         }
+    }
+
+    private void confirmAndLogout() {
+        if (!com.nextit.util.Alerts.confirmLogout()) {
+            return;
+        }
+        logout();
     }
 
     private void logout() {

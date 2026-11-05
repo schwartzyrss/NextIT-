@@ -7,8 +7,10 @@ import com.nextit.service.*;
 import com.nextit.util.Alerts;
 import com.nextit.util.Ui;
 import javafx.collections.FXCollections;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.layout.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -35,6 +37,57 @@ public final class EmployerViews {
         Employer employer = profiles.employerForUser(account.getUserId())
                 .orElseThrow(() -> new AppException("Employer profile not found."));
 
+        HBox hero = new HBox(20);
+        hero.setAlignment(Pos.CENTER_LEFT);
+        hero.getStyleClass().add("profile-hero-card");
+
+        StackPane avatar = Ui.avatar(Ui.initials(employer.getCompanyName()), "avatar-yellow");
+
+        VBox identityDetails = new VBox(6);
+        Label nameLabel = new Label(value(employer.getCompanyName()));
+        nameLabel.getStyleClass().add("profile-hero-name");
+
+        HBox badges = new HBox(8);
+        badges.setAlignment(Pos.CENTER_LEFT);
+        badges.getChildren().addAll(
+                Ui.badge("@" + account.getUsername(), "badge-pill-cream"),
+                Ui.badge(String.valueOf(account.getRole()), "badge-pill-yellow"),
+                Ui.badge(value(employer.getIndustry()), "badge-pill-blue")
+        );
+        identityDetails.getChildren().addAll(nameLabel, badges);
+
+        Region heroSpacer = new Region();
+        HBox.setHgrow(heroSpacer, Priority.ALWAYS);
+
+        VBox heroRight = new VBox(6);
+        heroRight.setAlignment(Pos.CENTER_RIGHT);
+        Label contactPersonHighlight = new Label(value(employer.getContactPerson()));
+        contactPersonHighlight.getStyleClass().add("profile-hero-highlight-title");
+        Label contactNumberHighlight = new Label(value(employer.getContactNumber()));
+        contactNumberHighlight.getStyleClass().add("profile-hero-highlight-subtitle");
+        heroRight.getChildren().addAll(contactPersonHighlight, contactNumberHighlight);
+
+        hero.getChildren().addAll(avatar, identityDetails, heroSpacer, heroRight);
+
+        // Account tray
+        GridPane accountGrid = new GridPane();
+        accountGrid.setHgap(16);
+        accountGrid.setVgap(14);
+        ColumnConstraints col1 = new ColumnConstraints();
+        col1.setPercentWidth(50);
+        ColumnConstraints col2 = new ColumnConstraints();
+        col2.setPercentWidth(50);
+        accountGrid.getColumnConstraints().addAll(col1, col2);
+
+        accountGrid.add(Ui.propertyTile("Username", value(account.getUsername())), 0, 0);
+        accountGrid.add(Ui.propertyTile("Email Address", value(account.getEmail())), 1, 0);
+        accountGrid.add(Ui.propertyTile("Representative", value(account.getFullName())), 0, 1);
+        accountGrid.add(Ui.propertyTile("Account Role", Ui.badge(String.valueOf(account.getRole()), "badge-pill-yellow")), 1, 1);
+
+        VBox accountTray = Ui.tray("Account Credentials", "Portal login credentials and account representative details", accountGrid);
+        HBox.setHgrow(accountTray, Priority.ALWAYS);
+
+        // Company Details tray (Editable)
         TextField company = Ui.field("Company name");
         company.setText(employer.getCompanyName());
         TextField industry = Ui.field("Industry");
@@ -45,6 +98,17 @@ public final class EmployerViews {
         contactNumber.setText(employer.getContactNumber());
         TextField address = Ui.field("Address");
         address.setText(employer.getAddress());
+
+        GridPane editGrid = new GridPane();
+        editGrid.setHgap(16);
+        editGrid.setVgap(14);
+        editGrid.getColumnConstraints().addAll(col1, col2);
+
+        editGrid.add(Ui.propertyTile("Company Name", company), 0, 0);
+        editGrid.add(Ui.propertyTile("Industry Sector", industry), 1, 0);
+        editGrid.add(Ui.propertyTile("Contact Person", contactPerson), 0, 1);
+        editGrid.add(Ui.propertyTile("Contact Number", contactNumber), 1, 1);
+        editGrid.add(Ui.propertyTile("Office Address", address), 0, 2);
 
         Button save = new Button("Save Company Profile");
         save.getStyleClass().add("primary-button");
@@ -58,13 +122,13 @@ public final class EmployerViews {
             Alerts.info("Company profile updated.");
         }));
 
-        Node accountForm = Ui.form(new String[]{"Username", "Email", "Full name", "Role"},
-                new Node[]{new Label(value(account.getUsername())), new Label(value(account.getEmail())),
-                        new Label(value(account.getFullName())), new Label(String.valueOf(account.getRole()))});
-        Node companyForm = Ui.form(new String[]{"Company", "Industry", "Contact person", "Contact number", "Address"},
-                new Node[]{company, industry, contactPerson, contactNumber, address});
+        VBox editTray = Ui.tray("Company Information", "Update company directory information visible to campus candidates", editGrid, save);
+        HBox.setHgrow(editTray, Priority.ALWAYS);
+
+        HBox traysRow = new HBox(20, accountTray, editTray);
+
         return Ui.page("Company Profile", "Keep your company information current so students know who is reviewing their applications.",
-                Ui.section("Account"), accountForm, Ui.section("Company"), companyForm, save);
+                hero, traysRow);
     }
 
     public static Node dashboard() {
