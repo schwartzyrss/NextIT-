@@ -44,18 +44,19 @@ public final class EmployerViews {
         hero.getStyleClass().add("profile-hero-card");
 
         StackPane avatar = Ui.avatar(Ui.initials(employer.getCompanyName()), "avatar-yellow");
+        Label avatarText = (!avatar.getChildren().isEmpty() && avatar.getChildren().get(0) instanceof Label l) ? l : null;
 
         VBox identityDetails = new VBox(6);
         Label nameLabel = new Label(value(employer.getCompanyName()));
         nameLabel.getStyleClass().add("profile-hero-name");
 
+        Label usernameBadge = Ui.badge("@" + account.getUsername(), "badge-pill-cream");
+        Label roleBadge = Ui.badge(String.valueOf(account.getRole()), "badge-pill-yellow");
+        Label industryBadge = Ui.badge(value(employer.getIndustry()), "badge-pill-blue");
+
         HBox badges = new HBox(8);
         badges.setAlignment(Pos.CENTER_LEFT);
-        badges.getChildren().addAll(
-                Ui.badge("@" + account.getUsername(), "badge-pill-cream"),
-                Ui.badge(String.valueOf(account.getRole()), "badge-pill-yellow"),
-                Ui.badge(value(employer.getIndustry()), "badge-pill-blue")
-        );
+        badges.getChildren().addAll(usernameBadge, roleBadge, industryBadge);
         identityDetails.getChildren().addAll(nameLabel, badges);
 
         Region heroSpacer = new Region();
@@ -92,10 +93,22 @@ public final class EmployerViews {
         // Company Details tray (Editable)
         TextField company = Ui.field("Company name");
         company.setText(employer.getCompanyName());
+        company.textProperty().addListener((obs, old, val) -> {
+            nameLabel.setText(value(val));
+            if (avatarText != null) avatarText.setText(Ui.initials(val));
+        });
+
         TextField industry = Ui.field("Industry");
         industry.setText(employer.getIndustry());
+        industry.textProperty().addListener((obs, old, val) -> {
+            industryBadge.setText(value(val));
+        });
+
         TextField contactPerson = Ui.field("Contact person");
         contactPerson.setText(employer.getContactPerson());
+        contactPerson.textProperty().addListener((obs, old, val) -> {
+            contactPersonHighlight.setText(value(val));
+        });
 
         TextField contactNumber = Ui.field("Contact number");
         contactNumber.setText(employer.getContactNumber());
@@ -152,6 +165,7 @@ public final class EmployerViews {
 
         // Clear error state immediately when user modifies input, and schedule debounce
         contactNumber.textProperty().addListener((obs, old, cur) -> {
+            contactNumberHighlight.setText(value(cur));
             debounceContact.stop();
             if (contactNumberError.isVisible()) {
                 contactNumberError.setVisible(false);
@@ -247,7 +261,15 @@ public final class EmployerViews {
                     employer.setContactNumber(contactNumber.getText());
                     employer.setAddress(address.getText());
                     profiles.updateEmployer(employer);
-                    Alerts.info("Company profile updated.");
+
+                    // Update Hero card displays immediately
+                    nameLabel.setText(value(employer.getCompanyName()));
+                    if (avatarText != null) avatarText.setText(Ui.initials(employer.getCompanyName()));
+                    industryBadge.setText(value(employer.getIndustry()));
+                    contactPersonHighlight.setText(value(employer.getContactPerson()));
+                    contactNumberHighlight.setText(value(employer.getContactNumber()));
+
+                    Alerts.info("Company profile updated successfully.");
                 } finally {
                     save.setText("Save Company Profile");
                     updateSaveButtonState.run();
