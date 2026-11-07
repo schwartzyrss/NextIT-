@@ -91,28 +91,364 @@ public final class AdminViews {
     }
 
     public static Node dashboard() {
-        javafx.scene.layout.HBox row1 = new javafx.scene.layout.HBox(12,
-                Ui.card("Users", String.valueOf(admin.users().size())),
-                Ui.card("Students", String.valueOf(admin.students().size())),
-                Ui.card("Instructors", String.valueOf(admin.instructors().size())),
-                Ui.card("Employers", String.valueOf(admin.employers().size())));
-        javafx.scene.layout.HBox row2 = new javafx.scene.layout.HBox(12,
-                Ui.card("Subjects", String.valueOf(admin.subjects().size())),
-                Ui.card("Technical Skills", String.valueOf(skills.skills().size())),
-                Ui.card("Portfolios", String.valueOf(portfolios.allPortfolios().size())),
-                Ui.card("Pending Portfolios", String.valueOf(portfolios.allPortfolios().stream()
-                        .filter(p -> "Pending".equalsIgnoreCase(p.getVisibility())).count())));
-        Map<String, Long> enrollmentStatuses = DashboardCharts.countByStatus(
-                academic.allEnrollments().stream().map(Enrollment::getStatus).toList(),
-                List.of("Enrolled", "Dropped", "Completed"));
-        return Ui.page("Administrator Dashboard", "Manage accounts, academic reference data and student portfolios.",
-                row1, row2,
-                DashboardCharts.row(
-                        DashboardCharts.statusSummary("Enrollment Status", enrollmentStatuses),
-                        DashboardCharts.statusSummary("Portfolio Visibility",
-                                DashboardCharts.countByStatus(
-                                        portfolios.allPortfolios().stream().map(Portfolio::getVisibility).toList(),
-                                        List.of("Private", "Pending", "Approved", "Public")))));
+        VBox rootBox = new VBox(20);
+        rootBox.getStyleClass().add("page");
+        rootBox.setFillWidth(true);
+
+        // 1. Hero cushion with status and live term badges
+        HBox hero = new HBox(16);
+        hero.getStyleClass().add("page-header-cushion");
+        hero.setAlignment(Pos.CENTER_LEFT);
+
+        VBox heroTitles = new VBox(4);
+        heroTitles.getChildren().addAll(
+                Ui.title("Administrator Dashboard"),
+                Ui.subtitle("Manage accounts, academic reference data, and student portfolios.")
+        );
+
+        Region heroSpacer = new Region();
+        HBox.setHgrow(heroSpacer, Priority.ALWAYS);
+
+        HBox statusPillBox = new HBox(8);
+        statusPillBox.setAlignment(Pos.CENTER_RIGHT);
+        Label statusDot = new Label("🟢");
+        Label statusText = new Label("Systems Operational");
+        statusText.setStyle("-fx-font-weight: bold; -fx-text-fill: #2d6a4f; -fx-font-size: 12px;");
+        HBox liveChip = new HBox(6, statusDot, statusText);
+        liveChip.setAlignment(Pos.CENTER);
+        liveChip.getStyleClass().addAll("badge-pill", "badge-pill-mint");
+
+        Label termChip = Ui.badge("AY 2026-2027 • 1st Sem", "badge-pill-lavender");
+        statusPillBox.getChildren().addAll(liveChip, termChip);
+
+        hero.getChildren().addAll(heroTitles, heroSpacer, statusPillBox);
+
+        // 2. Full-Width 4-Column Stat Cards
+        HBox row1 = new HBox(14);
+        HBox row2 = new HBox(14);
+        row1.setFillHeight(true);
+        row2.setFillHeight(true);
+
+        // 3. Main Dashboard Body: Left Content + Dedicated Right Control Panel
+        HBox dashboardBody = new HBox(20);
+        dashboardBody.setAlignment(Pos.TOP_LEFT);
+
+        VBox leftColumn = new VBox(20);
+        HBox.setHgrow(leftColumn, Priority.ALWAYS);
+
+        VBox rightColumnHolder = new VBox();
+
+        // Left Column Component A: Dual Pie Charts
+        HBox chartsRow = new HBox(14);
+        chartsRow.setAlignment(Pos.TOP_LEFT);
+
+        // Left Column Component B: System User Directory Table
+        VBox directoryTray = new VBox(14);
+        directoryTray.getStyleClass().add("clay-tray");
+        directoryTray.setFillWidth(true);
+
+        TableView<User> userTable = Ui.table("No accounts found matching filter.");
+        userTable.setPrefHeight(290);
+        userTable.setMinHeight(220);
+
+        Ui.addColumn(userTable, "Username", u -> "@" + u.getUsername());
+        Ui.addColumn(userTable, "Full Name", User::getFullName);
+        Ui.addColumn(userTable, "Email Address", User::getEmail);
+        userTable.getColumns().add(Ui.actionColumn("Role", u -> {
+            Role r = u.getRole();
+            String pillClass = switch (r != null ? r : Role.STUDENT) {
+                case ADMIN -> "badge-pill-pink";
+                case INSTRUCTOR -> "badge-pill-yellow";
+                case STUDENT -> "badge-pill-blue";
+                case EMPLOYER -> "badge-pill-mint";
+            };
+            return Ui.badge(String.valueOf(r), pillClass);
+        }));
+
+        TextField searchUsers = Ui.field("Filter by username, name, or email...");
+        searchUsers.setPrefWidth(240);
+
+        ComboBox<String> roleFilter = new ComboBox<>(FXCollections.observableArrayList(
+                "All Roles", "STUDENT", "INSTRUCTOR", "EMPLOYER", "ADMIN"));
+        roleFilter.setValue("All Roles");
+
+        // Action column for editing users directly from the dashboard
+        userTable.getColumns().add(Ui.actionColumn("Action", u -> {
+            Button editBtn = new Button("Edit");
+            editBtn.setStyle("-fx-font-size: 11px; -fx-padding: 3 10; -fx-background-radius: 12;");
+            return editBtn;
+        }));
+
+        // Directory Tray Header
+        HBox trayHeader = new HBox(12);
+        trayHeader.setAlignment(Pos.CENTER_LEFT);
+
+        VBox trayTitles = new VBox(3);
+        Label trayTitle = new Label("System User Directory");
+        trayTitle.getStyleClass().add("tray-title");
+        Label traySub = new Label("Recently active accounts and role allocations across the institution");
+        traySub.getStyleClass().add("tray-subtitle");
+        trayTitles.getChildren().addAll(trayTitle, traySub);
+
+        Region traySpacer = new Region();
+        HBox.setHgrow(traySpacer, Priority.ALWAYS);
+
+        trayHeader.getChildren().addAll(trayTitles, traySpacer, searchUsers, roleFilter);
+        directoryTray.getChildren().addAll(trayHeader, userTable);
+
+        leftColumn.getChildren().addAll(chartsRow, directoryTray);
+        dashboardBody.getChildren().addAll(leftColumn, rightColumnHolder);
+
+        // Define self-refreshing logic for all dynamic widgets
+        final Runnable[] refreshHolder = new Runnable[1];
+        Runnable refreshDashboard = () -> {
+            // Update Stat Cards
+            row1.getChildren().clear();
+            row2.getChildren().clear();
+
+            VBox cardUsers = Ui.card("Total Users", String.valueOf(admin.users().size()));
+            VBox cardStudents = Ui.card("Students", String.valueOf(admin.students().size()));
+            VBox cardInstructors = Ui.card("Instructors", String.valueOf(admin.instructors().size()));
+            VBox cardEmployers = Ui.card("Employers", String.valueOf(admin.employers().size()));
+
+            VBox cardSubjects = Ui.card("Subjects", String.valueOf(admin.subjects().size()));
+            VBox cardSkills = Ui.card("Technical Skills", String.valueOf(skills.skills().size()));
+            VBox cardPortfolios = Ui.card("Portfolios", String.valueOf(portfolios.allPortfolios().size()));
+            long pending = portfolios.allPortfolios().stream()
+                    .filter(p -> "Pending".equalsIgnoreCase(p.getVisibility())).count();
+            VBox cardPending = Ui.card("Pending Portfolios", String.valueOf(pending));
+
+            for (VBox c : List.of(cardUsers, cardStudents, cardInstructors, cardEmployers,
+                    cardSubjects, cardSkills, cardPortfolios, cardPending)) {
+                HBox.setHgrow(c, Priority.ALWAYS);
+                c.setMaxWidth(Double.MAX_VALUE);
+            }
+
+            row1.getChildren().addAll(cardUsers, cardStudents, cardInstructors, cardEmployers);
+            row2.getChildren().addAll(cardSubjects, cardSkills, cardPortfolios, cardPending);
+
+            // Update Charts Row
+            chartsRow.getChildren().clear();
+            Map<String, Long> enrollmentStatuses = DashboardCharts.countByStatus(
+                    academic.allEnrollments().stream().map(Enrollment::getStatus).toList(),
+                    List.of("Enrolled", "Dropped", "Completed"));
+            Map<String, Long> portfolioStatuses = DashboardCharts.countByStatus(
+                    portfolios.allPortfolios().stream().map(Portfolio::getVisibility).toList(),
+                    List.of("Private", "Pending", "Approved", "Public"));
+
+            Node enrollmentChart = DashboardCharts.statusSummary("Enrollment Status", enrollmentStatuses);
+            Node portfolioChart = DashboardCharts.statusSummary("Portfolio Visibility", portfolioStatuses);
+            HBox.setHgrow(enrollmentChart, Priority.ALWAYS);
+            HBox.setHgrow(portfolioChart, Priority.ALWAYS);
+            chartsRow.getChildren().addAll(enrollmentChart, portfolioChart);
+
+            // Update Right Side Panel
+            rightColumnHolder.getChildren().clear();
+            VBox rightPanel = createRightSidePanel(pending, admin.subjects().size(), academic.allEnrollments().size(), () -> refreshHolder[0].run());
+            rightColumnHolder.getChildren().add(rightPanel);
+
+            // Update User Directory Table
+            String q = searchUsers.getText() == null ? "" : searchUsers.getText().toLowerCase(Locale.ROOT);
+            String selectedRole = roleFilter.getValue();
+            List<User> filtered = admin.users().stream().filter(u -> {
+                boolean matchesQuery = q.isBlank()
+                        || String.valueOf(u.getUsername()).toLowerCase(Locale.ROOT).contains(q)
+                        || String.valueOf(u.getFullName()).toLowerCase(Locale.ROOT).contains(q)
+                        || String.valueOf(u.getEmail()).toLowerCase(Locale.ROOT).contains(q);
+                boolean matchesRole = selectedRole == null || "All Roles".equals(selectedRole)
+                        || String.valueOf(u.getRole()).equalsIgnoreCase(selectedRole);
+                return matchesQuery && matchesRole;
+            }).toList();
+            userTable.setItems(FXCollections.observableArrayList(filtered));
+        };
+        refreshHolder[0] = refreshDashboard;
+
+        // Wire Edit button action to refresh
+        if (userTable.getColumns().size() > 4) {
+            userTable.getColumns().remove(4);
+        }
+        userTable.getColumns().add(Ui.actionColumn("Action", u -> {
+            Button editBtn = new Button("Edit");
+            editBtn.setStyle("-fx-font-size: 11px; -fx-padding: 3 10; -fx-background-radius: 12;");
+            editBtn.setOnAction(ev -> editUser(u, refreshDashboard));
+            return editBtn;
+        }));
+
+        // Hook up filters
+        searchUsers.textProperty().addListener((obs, old, val) -> refreshDashboard.run());
+        roleFilter.valueProperty().addListener((obs, old, val) -> refreshDashboard.run());
+
+        // Initial populate
+        refreshDashboard.run();
+
+        rootBox.getChildren().addAll(hero, row1, row2, dashboardBody);
+        return rootBox;
+    }
+
+    private static VBox createRightSidePanel(long pendingPortfolios, int totalSubjects, int totalEnrollments, Runnable refresh) {
+        VBox rightSide = new VBox(16);
+        rightSide.setPrefWidth(360);
+        rightSide.setMinWidth(320);
+
+        // 1. Quick Administrative Actions Launcher
+        VBox quickActionsCard = new VBox(12);
+        quickActionsCard.getStyleClass().add("clay-tray");
+
+        Label actTitle = new Label("Quick Actions");
+        actTitle.getStyleClass().add("tray-title");
+        Label actSub = new Label("Instant administrative shortcuts");
+        actSub.getStyleClass().add("tray-subtitle");
+
+        Button addUserBtn = new Button("👤  Add New User");
+        addUserBtn.setMaxWidth(Double.MAX_VALUE);
+        addUserBtn.getStyleClass().add("primary-button");
+        addUserBtn.setOnAction(e -> editUser(null, refresh));
+
+        Button assignProfBtn = new Button("👩‍🏫  Assign Professor");
+        assignProfBtn.setMaxWidth(Double.MAX_VALUE);
+        assignProfBtn.getStyleClass().add("secondary-button");
+        assignProfBtn.setOnAction(e -> assignProfessorModal(null, refresh));
+
+        Button addSubjectBtn = new Button("📖  Create Subject");
+        addSubjectBtn.setMaxWidth(Double.MAX_VALUE);
+        addSubjectBtn.getStyleClass().add("secondary-button");
+        addSubjectBtn.setOnAction(e -> editSubject(null, refresh));
+
+        Button refreshBtn = new Button("🔄  Refresh System Data");
+        refreshBtn.setMaxWidth(Double.MAX_VALUE);
+        refreshBtn.getStyleClass().add("secondary-button");
+        refreshBtn.setOnAction(e -> {
+            refresh.run();
+            Alerts.info("System data refreshed.");
+        });
+
+        quickActionsCard.getChildren().addAll(new VBox(3, actTitle, actSub), addUserBtn, assignProfBtn, addSubjectBtn, refreshBtn);
+
+        // 2. Action Required & Platform Diagnostics
+        VBox queueTray = createHealthAndQueueTray(pendingPortfolios, totalSubjects, totalEnrollments);
+
+        // 3. Recent Platform Activity
+        VBox activityCard = new VBox(12);
+        activityCard.getStyleClass().add("clay-tray");
+        Label feedTitle = new Label("Recent Accounts");
+        feedTitle.getStyleClass().add("tray-title");
+        Label feedSub = new Label("Latest registered members");
+        feedSub.getStyleClass().add("tray-subtitle");
+        activityCard.getChildren().add(new VBox(3, feedTitle, feedSub));
+
+        List<User> recentUsers = admin.users().stream()
+                .sorted((a, b) -> Integer.compare(b.getUserId(), a.getUserId()))
+                .limit(4)
+                .toList();
+
+        for (User u : recentUsers) {
+            HBox item = new HBox(10);
+            item.setAlignment(Pos.CENTER_LEFT);
+            item.getStyleClass().add("activity-item");
+
+            StackPane avatar = Ui.avatar(Ui.initials(u.getFullName()), "avatar-pink");
+            avatar.setPrefSize(34, 34);
+            avatar.setMinSize(34, 34);
+
+            VBox info = new VBox(2);
+            Label name = new Label(Ui.value(u.getFullName()));
+            name.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+            Label uname = new Label("@" + u.getUsername());
+            uname.setStyle("-fx-font-size: 10px; -fx-text-fill: #8e8394;");
+            info.getChildren().addAll(name, uname);
+            HBox.setHgrow(info, Priority.ALWAYS);
+
+            Role r = u.getRole() != null ? u.getRole() : Role.STUDENT;
+            String pillClass = switch (r) {
+                case ADMIN -> "badge-pill-pink";
+                case INSTRUCTOR -> "badge-pill-yellow";
+                case STUDENT -> "badge-pill-blue";
+                case EMPLOYER -> "badge-pill-mint";
+            };
+            Label roleBadge = Ui.badge(String.valueOf(r), pillClass);
+            item.getChildren().addAll(avatar, info, roleBadge);
+            activityCard.getChildren().add(item);
+        }
+
+        rightSide.getChildren().addAll(quickActionsCard, queueTray, activityCard);
+        return rightSide;
+    }
+
+    private static VBox createHealthAndQueueTray(long pendingPortfolios, int totalSubjects, int totalEnrollments) {
+        VBox tray = new VBox(14);
+        tray.getStyleClass().add("clay-tray");
+
+        Label title = new Label("System Status & Queue");
+        title.getStyleClass().add("tray-title");
+        Label sub = new Label("Platform infrastructure & pending tasks");
+        sub.getStyleClass().add("tray-subtitle");
+        VBox titleBox = new VBox(3, title, sub);
+
+        // Action Queue Section
+        VBox queueBox = new VBox(8);
+        Label queueHeader = new Label("ACTION REQUIRED");
+        queueHeader.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #8e8394; -fx-letter-spacing: 0.5px;");
+
+        HBox pendingRow = new HBox(8);
+        pendingRow.setAlignment(Pos.CENTER_LEFT);
+        Label pendingLabel = new Label("Pending Portfolios:");
+        pendingLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+        Region pSpacer = new Region();
+        HBox.setHgrow(pSpacer, Priority.ALWAYS);
+        Node pendingBadge = pendingPortfolios > 0
+                ? Ui.badge(pendingPortfolios + " Awaiting Review", "badge-pill-pink")
+                : Ui.badge("All Cleared (0)", "badge-pill-mint");
+        pendingRow.getChildren().addAll(pendingLabel, pSpacer, pendingBadge);
+
+        HBox subjectRow = new HBox(8);
+        subjectRow.setAlignment(Pos.CENTER_LEFT);
+        Label subjLabel = new Label("Active Subjects:");
+        subjLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+        Region sSpacer = new Region();
+        HBox.setHgrow(sSpacer, Priority.ALWAYS);
+        Node subjBadge = Ui.badge(totalSubjects + " Registered", "badge-pill-cream");
+        subjectRow.getChildren().addAll(subjLabel, sSpacer, subjBadge);
+
+        HBox enrollRow = new HBox(8);
+        enrollRow.setAlignment(Pos.CENTER_LEFT);
+        Label enrollLabel = new Label("Total Enrollments:");
+        enrollLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+        Region eSpacer = new Region();
+        HBox.setHgrow(eSpacer, Priority.ALWAYS);
+        Node enrollBadge = Ui.badge(totalEnrollments + " Enrolled", "badge-pill-lavender");
+        enrollRow.getChildren().addAll(enrollLabel, eSpacer, enrollBadge);
+
+        queueBox.getChildren().addAll(queueHeader, pendingRow, subjectRow, enrollRow);
+
+        Separator sep = new Separator();
+
+        // Infrastructure Section
+        VBox infraBox = new VBox(8);
+        Label infraHeader = new Label("SYSTEM ENVIRONMENT");
+        infraHeader.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #8e8394; -fx-letter-spacing: 0.5px;");
+
+        HBox dbRow = new HBox(8);
+        dbRow.setAlignment(Pos.CENTER_LEFT);
+        Label dbLabel = new Label("Database Storage:");
+        dbLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #554d56;");
+        Region dSpacer = new Region();
+        HBox.setHgrow(dSpacer, Priority.ALWAYS);
+        Node dbBadge = Ui.badge("MariaDB / Supabase", "badge-pill-blue");
+        dbRow.getChildren().addAll(dbLabel, dSpacer, dbBadge);
+
+        HBox secRow = new HBox(8);
+        secRow.setAlignment(Pos.CENTER_LEFT);
+        Label secLabel = new Label("Security Clearance:");
+        secLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #554d56;");
+        Region secSpacer = new Region();
+        HBox.setHgrow(secSpacer, Priority.ALWAYS);
+        Node secBadge = Ui.badge("Superuser Admin", "badge-pill-pink");
+        secRow.getChildren().addAll(secLabel, secSpacer, secBadge);
+
+        infraBox.getChildren().addAll(infraHeader, dbRow, secRow);
+
+        tray.getChildren().addAll(titleBox, queueBox, sep, infraBox);
+        return tray;
     }
 
     public static Node users() {
@@ -173,8 +509,12 @@ public final class AdminViews {
         });
         Button refresh = new Button("Refresh");
         refresh.setOnAction(e -> applyFilter.run());
+        Button exportCsv = Ui.button("📥 Export CSV", "clay-btn-secondary");
+        exportCsv.setOnAction(e -> com.nextit.util.ExportService.exportTableViewToCsv(table, "user_accounts.csv", "System User Accounts", exportCsv.getScene().getWindow()));
+        Button exportReport = Ui.button("📄 Print / PDF", "clay-btn-secondary");
+        exportReport.setOnAction(e -> com.nextit.util.ExportService.exportTableViewToHtmlReport(table, "user_accounts_report.html", "System User Accounts", exportReport.getScene().getWindow()));
         return Ui.page("User Accounts", "Create and maintain accounts for students, instructors, employers and administrators.",
-                Ui.toolbar(new Label("Search:"), search, add, edit, resetPassword, delete, refresh), table);
+                Ui.toolbar(new Label("Search:"), search, add, edit, resetPassword, delete, refresh, exportCsv, exportReport), table);
     }
 
     private static void editUser(User existing, Runnable refresh) {

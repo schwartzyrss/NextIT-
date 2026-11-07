@@ -42,6 +42,14 @@ public final class Ui {
         return box;
     }
 
+    public static Button button(String text, String... styleClasses) {
+        Button btn = new Button(text);
+        if (styleClasses != null && styleClasses.length > 0) {
+            btn.getStyleClass().addAll(styleClasses);
+        }
+        return btn;
+    }
+
     public static String value(String text) {
         return text == null ? "" : text;
     }

@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.HBox?>
@@ -11,47 +12,167 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.SVGPath?>
-<?import javafx.scene.text.Text?>
 
-<VBox alignment="CENTER" spacing="16" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.nextit.controller.LoginController" styleClass="login-root">
-    <padding><Insets top="40" right="40" bottom="40" left="40"/></padding>
-    <Text text="NextIT" styleClass="app-title"/>
-    <Label text="Track Your Progress, Build Your Future" styleClass="app-subtitle"/>
+<ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+            styleClass="login-scroll-root" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.nextit.controller.LoginController">
+    <StackPane alignment="CENTER" styleClass="login-root" minHeight="660">
+        <padding>
+            <Insets top="28" right="28" bottom="28" left="28"/>
+        </padding>
 
-    <VBox spacing="14" styleClass="login-card" maxWidth="380">
-        <Label text="Username or Email"/>
-        <TextField fx:id="usernameField" promptText="Enter username or email"/>
-        <Label text="Password"/>
-        <StackPane alignment="CENTER_RIGHT">
-            <PasswordField fx:id="passwordField" promptText="Enter password" onAction="#handleLogin" styleClass="password-input-with-eye"/>
-            <TextField fx:id="visiblePasswordField" promptText="Enter password" managed="false" visible="false" onAction="#handleLogin" styleClass="password-input-with-eye"/>
-            <Button fx:id="togglePasswordBtn" onAction="#togglePassword" styleClass="eye-toggle-btn" focusTraversable="false" StackPane.alignment="CENTER_RIGHT">
-                <StackPane.margin>
-                    <Insets right="8"/>
-                </StackPane.margin>
-                <tooltip>
-                    <Tooltip text="Toggle password visibility"/>
-                </tooltip>
-                <graphic>
-                    <SVGPath fx:id="eyeIcon" content="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="#7D7581" scaleX="0.85" scaleY="0.85"/>
-                </graphic>
-            </Button>
-        </StackPane>
-        <Button text="Login" onAction="#handleLogin" maxWidth="Infinity" styleClass="primary-button"/>
-        <Button text="Create an Account" onAction="#handleOpenOnboarding" maxWidth="Infinity" styleClass="secondary-button"/>
-        <Label fx:id="errorLabel" styleClass="error-label"/>
+        <HBox alignment="CENTER" maxWidth="980" maxHeight="620" styleClass="login-showcase-container">
+            <!-- Left Brand & Ecosystem Hero Cushion Pane -->
+            <VBox styleClass="login-hero-pane" prefWidth="440" maxWidth="460" spacing="20" HBox.hgrow="NEVER" alignment="TOP_LEFT">
+                <!-- Top Emblem and Title -->
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <StackPane style="-fx-background-color: #FFFFFF; -fx-background-radius: 18; -fx-padding: 8; -fx-effect: dropshadow(gaussian, rgba(190, 95, 140, 0.25), 8, 0.1, 0, 3);">
+                        <Label text="⚡" style="-fx-font-size: 20px;"/>
+                    </StackPane>
+                    <VBox spacing="1">
+                        <Label text="NextIT" styleClass="login-hero-title"/>
+                        <Label text="CAREER &amp; ACADEMIC HUB" style="-fx-font-size: 10px; -fx-font-weight: 800; -fx-text-fill: #54445A; -fx-letter-spacing: 0.8px;"/>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label text="ACADEMIC VERIFIED" styleClass="badge-pill, badge-pill-mint" style="-fx-font-size: 9.5px; -fx-padding: 4 10; -fx-font-weight: 800;"/>
+                </HBox>
 
-        <!-- Quick 1-Click Demo Login Chips -->
-        <VBox spacing="6" alignment="CENTER" style="-fx-padding: 6 0 0 0;">
-            <Label text="OR 1-CLICK DEMO ACCESS" style="-fx-font-size: 10px; -fx-font-weight: 800; -fx-text-fill: #9C92A2; -fx-letter-spacing: 0.8px;"/>
-            <HBox spacing="6" alignment="CENTER">
-                <Button text="🛡️ Admin" onAction="#quickLoginAdmin" styleClass="demo-pill-btn"/>
-                <Button text="🧑‍🏫 Instructor" onAction="#quickLoginInstructor" styleClass="demo-pill-btn"/>
-                <Button text="🧑‍🎓 Student" onAction="#quickLoginStudent" styleClass="demo-pill-btn"/>
-                <Button text="🏢 Employer" onAction="#quickLoginEmployer" styleClass="demo-pill-btn"/>
-            </HBox>
-        </VBox>
-    </VBox>
-    <Region/>
-</VBox>
+                <!-- Hero Headline -->
+                <VBox spacing="6">
+                    <Label text="Track Your Progress,&#10;Build Your Future" styleClass="login-hero-subtitle" wrapText="true"/>
+                    <Label text="Connecting student portfolios, faculty assessments, and enterprise recruitment into a single, verified claymorphic ecosystem." styleClass="login-hero-desc" wrapText="true"/>
+                </VBox>
+
+                <!-- 3 Feature Cushions -->
+                <VBox spacing="10" VBox.vgrow="ALWAYS" alignment="CENTER_LEFT">
+                    <HBox spacing="12" alignment="CENTER_LEFT" styleClass="login-feature-card">
+                        <Label text="🎓" style="-fx-font-size: 18px;"/>
+                        <VBox spacing="2">
+                            <Label text="Verified Student Portfolios" styleClass="login-feature-title"/>
+                            <Label text="Showcase capstones and verified technical skills to top recruiters." styleClass="login-feature-desc" wrapText="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="12" alignment="CENTER_LEFT" styleClass="login-feature-card">
+                        <Label text="📊" style="-fx-font-size: 18px;"/>
+                        <VBox spacing="2">
+                            <Label text="Continuous Academic Tracking" styleClass="login-feature-title"/>
+                            <Label text="Real-time attendance, grade records, and rubric assessments." styleClass="login-feature-desc" wrapText="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="12" alignment="CENTER_LEFT" styleClass="login-feature-card">
+                        <Label text="🤝" style="-fx-font-size: 18px;"/>
+                        <VBox spacing="2">
+                            <Label text="Direct Industry Linkage" styleClass="login-feature-title"/>
+                            <Label text="Leading tech companies discover student talent and review applications." styleClass="login-feature-desc" wrapText="true"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+
+                <!-- Bottom Status Pill -->
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="login-trust-chip">
+                    <Label text="🟢" style="-fx-font-size: 10px;"/>
+                    <Label text="Encrypted Portal • Spring 2026 Academic Network" styleClass="login-trust-text"/>
+                </HBox>
+            </VBox>
+
+            <!-- Right Sign-In Form Pane -->
+            <VBox styleClass="login-form-pane" prefWidth="540" maxWidth="560" spacing="14" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
+                <VBox spacing="3">
+                    <Label text="Welcome Back" styleClass="login-form-title"/>
+                    <Label text="Sign in with your academic credentials or select a demo role." styleClass="login-form-subtitle"/>
+                </VBox>
+
+                <VBox spacing="4">
+                    <Label text="USERNAME OR EMAIL" styleClass="login-field-label"/>
+                    <TextField fx:id="usernameField" promptText="Enter your username or institutional email" styleClass="text-field"/>
+                </VBox>
+
+                <VBox spacing="4">
+                    <Label text="PASSWORD" styleClass="login-field-label"/>
+                    <StackPane alignment="CENTER_RIGHT">
+                        <PasswordField fx:id="passwordField" promptText="Enter your account password" onAction="#handleLogin" styleClass="password-input-with-eye"/>
+                        <TextField fx:id="visiblePasswordField" promptText="Enter your account password" managed="false" visible="false" onAction="#handleLogin" styleClass="password-input-with-eye"/>
+                        <Button fx:id="togglePasswordBtn" onAction="#togglePassword" styleClass="eye-toggle-btn" focusTraversable="false" StackPane.alignment="CENTER_RIGHT">
+                            <StackPane.margin>
+                                <Insets right="12"/>
+                            </StackPane.margin>
+                            <tooltip>
+                                <Tooltip text="Toggle password visibility"/>
+                            </tooltip>
+                            <graphic>
+                                <SVGPath fx:id="eyeIcon" content="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="#7D7581" scaleX="0.85" scaleY="0.85"/>
+                            </graphic>
+                        </Button>
+                    </StackPane>
+                </VBox>
+
+                <VBox spacing="10" style="-fx-padding: 4 0 0 0;">
+                    <Button text="Sign In to Portal" onAction="#handleLogin" maxWidth="Infinity" styleClass="primary-button" style="-fx-font-size: 13.5px; -fx-padding: 11 24;"/>
+                    <Button text="✨ Create an Account / Onboarding" onAction="#handleOpenOnboarding" maxWidth="Infinity" styleClass="secondary-button" style="-fx-font-size: 13px; -fx-padding: 10 24;"/>
+                </VBox>
+
+                <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" alignment="CENTER" maxWidth="Infinity"/>
+
+                <!-- 1-Click Demo Profiles Section -->
+                <HBox alignment="CENTER" spacing="12" style="-fx-padding: 2 0;">
+                    <Region style="-fx-background-color: #E2DFE8; -fx-pref-height: 1;" HBox.hgrow="ALWAYS"/>
+                    <Label text="OR 1-CLICK INSTANT DEMO ACCESS" style="-fx-font-size: 10px; -fx-font-weight: 800; -fx-text-fill: #9C92A2; -fx-letter-spacing: 0.8px;"/>
+                    <Region style="-fx-background-color: #E2DFE8; -fx-pref-height: 1;" HBox.hgrow="ALWAYS"/>
+                </HBox>
+
+                <VBox spacing="8" styleClass="login-demo-grid">
+                    <HBox spacing="10">
+                        <Button onAction="#quickLoginAdmin" maxWidth="Infinity" styleClass="demo-card-btn" HBox.hgrow="ALWAYS">
+                            <graphic>
+                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                    <Label text="🛡️" style="-fx-font-size: 17px;"/>
+                                    <VBox spacing="1">
+                                        <Label text="System Admin" styleClass="demo-card-title"/>
+                                        <Label text="admin1 • kakonggg" styleClass="demo-card-sub"/>
+                                    </VBox>
+                                </HBox>
+                            </graphic>
+                        </Button>
+                        <Button onAction="#quickLoginInstructor" maxWidth="Infinity" styleClass="demo-card-btn" HBox.hgrow="ALWAYS">
+                            <graphic>
+                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                    <Label text="🧑‍🏫" style="-fx-font-size: 17px;"/>
+                                    <VBox spacing="1">
+                                        <Label text="Faculty Instructor" styleClass="demo-card-title"/>
+                                        <Label text="instructor1 • Maria" styleClass="demo-card-sub"/>
+                                    </VBox>
+                                </HBox>
+                            </graphic>
+                        </Button>
+                    </HBox>
+                    <HBox spacing="10">
+                        <Button onAction="#quickLoginStudent" maxWidth="Infinity" styleClass="demo-card-btn" HBox.hgrow="ALWAYS">
+                            <graphic>
+                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                    <Label text="🎓" style="-fx-font-size: 17px;"/>
+                                    <VBox spacing="1">
+                                        <Label text="Student Scholar" styleClass="demo-card-title"/>
+                                        <Label text="student1 • Alex Reyes" styleClass="demo-card-sub"/>
+                                    </VBox>
+                                </HBox>
+                            </graphic>
+                        </Button>
+                        <Button onAction="#quickLoginEmployer" maxWidth="Infinity" styleClass="demo-card-btn" HBox.hgrow="ALWAYS">
+                            <graphic>
+                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                    <Label text="🏢" style="-fx-font-size: 17px;"/>
+                                    <VBox spacing="1">
+                                        <Label text="Industry Partner" styleClass="demo-card-title"/>
+                                        <Label text="employer1 • TechCorp" styleClass="demo-card-sub"/>
+                                    </VBox>
+                                </HBox>
+                            </graphic>
+                        </Button>
+                    </HBox>
+                </VBox>
+            </VBox>
+        </HBox>
+    </StackPane>
+</ScrollPane>

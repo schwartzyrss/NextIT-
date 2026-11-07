@@ -146,15 +146,18 @@ public class OnboardingView {
                         user = new User();
                         user.setUsername(uName);
                         user.setPasswordHash(AuthenticationService.hashPassword(password != null && !password.isBlank() ? password : "Password123!"));
-                        user.setEmail(email != null ? email.trim() : uName + "@nextit.edu");
+                        user.setEmail(email != null && !email.isBlank() ? email.trim() : uName + "@nextit.edu");
                         user.setRole(role);
                         user.setFirstName(firstName != null && !firstName.isBlank() ? firstName.trim() : "New");
                         user.setLastName(lastName != null && !lastName.isBlank() ? lastName.trim() : "Member");
 
                         userRepo.save(user);
+                    }
 
-                        // Save role-specific details
-                        if (role == Role.STUDENT) {
+                    // Save or self-heal role-specific details
+                    if (role == Role.STUDENT) {
+                        JdbcStudentRepository studentRepo = new JdbcStudentRepository();
+                        if (studentRepo.findByUserId(user.getUserId()).isEmpty()) {
                             Student s = new Student();
                             s.setUserId(user.getUserId());
                             s.setStudentNumber(detail3 != null && !detail3.isBlank() ? detail3.trim() : "2026-" + String.format("%04d", user.getUserId()));
@@ -169,23 +172,29 @@ public class OnboardingView {
                             s.setYearLevel(yr > 0 ? yr : 1);
                             s.setSection("A");
                             s.setEnrollmentStatus("Enrolled");
-                            new JdbcStudentRepository().save(s);
-                        } else if (role == Role.INSTRUCTOR) {
+                            studentRepo.save(s);
+                        }
+                    } else if (role == Role.INSTRUCTOR) {
+                        JdbcInstructorRepository instRepo = new JdbcInstructorRepository();
+                        if (instRepo.findByUserId(user.getUserId()).isEmpty()) {
                             Instructor inst = new Instructor();
                             inst.setUserId(user.getUserId());
                             inst.setEmployeeNumber(detail3 != null && !detail3.isBlank() ? detail3.trim() : "EMP-" + String.format("%04d", user.getUserId()));
-                            inst.setDepartment(detail2 != null && !detail2.isBlank() ? detail2.trim() : "Computer Science");
-                            inst.setSpecialization("Software Engineering");
-                            new JdbcInstructorRepository().save(inst);
-                        } else if (role == Role.EMPLOYER) {
+                            inst.setDepartment(detail1 != null && !detail1.isBlank() ? detail1.trim() : (detail2 != null && !detail2.isBlank() ? detail2.trim() : "Computer Science"));
+                            inst.setSpecialization(detail2 != null && !detail2.isBlank() ? detail2.trim() : "Software Engineering");
+                            instRepo.save(inst);
+                        }
+                    } else if (role == Role.EMPLOYER) {
+                        JdbcEmployerRepository empRepo = new JdbcEmployerRepository();
+                        if (empRepo.findByUserId(user.getUserId()).isEmpty()) {
                             Employer emp = new Employer();
                             emp.setUserId(user.getUserId());
                             emp.setCompanyName(detail1 != null && !detail1.isBlank() ? detail1.trim() : "NextIT Industry Partner");
-                            emp.setIndustry("Information Technology");
+                            emp.setIndustry(detail2 != null && !detail2.isBlank() ? detail2.trim() : "Information Technology");
                             emp.setContactPerson(user.getFullName());
-                            emp.setContactNumber("+1-555-0199");
+                            emp.setContactNumber(detail3 != null && !detail3.isBlank() ? detail3.trim() : "+1-555-" + String.format("%04d", user.getUserId()));
                             emp.setAddress("Technology Campus");
-                            new JdbcEmployerRepository().save(emp);
+                            empRepo.save(emp);
                         }
                     }
 

@@ -30,14 +30,37 @@ public class AppController {
     @FXML private Label headerLabel;
     @FXML private Label userLabel;
     @FXML private BorderPane contentPane;
+    @FXML private VBox sidebarContainer;
     @FXML private VBox sidebar;
     @FXML private ScrollPane sidebarScroll;
+    @FXML private VBox sidebarFooter;
+    @FXML private Button logoutButton;
     @FXML private Button toggleSidebarButton;
 
     private Stage stage;
     private Button activeNavButton;
+    private static AppController instance;
+
+    public static AppController getInstance() {
+        return instance;
+    }
+
+    public void navigateTo(javafx.scene.Node view, String sidebarMatch) {
+        if (contentPane != null && view != null) {
+            contentPane.setCenter(view);
+        }
+        if (sidebar != null && sidebarMatch != null) {
+            for (javafx.scene.Node n : sidebar.getChildren()) {
+                if (n instanceof Button b && b.getText().toLowerCase(Locale.ROOT).contains(sidebarMatch.toLowerCase(Locale.ROOT))) {
+                    setActiveButton(b);
+                    break;
+                }
+            }
+        }
+    }
 
     public void initialize(Stage stage, User user) {
+        instance = this;
         this.stage = stage;
         userLabel.setText(user.getFullName() + " (" + user.getRole() + ")");
         if (toggleSidebarButton != null) {
@@ -54,10 +77,11 @@ public class AppController {
 
     @FXML
     private void toggleSidebar() {
-        if (sidebarScroll == null) return;
-        boolean currentlyVisible = sidebarScroll.isVisible();
-        sidebarScroll.setVisible(!currentlyVisible);
-        sidebarScroll.setManaged(!currentlyVisible);
+        javafx.scene.Node target = sidebarContainer != null ? sidebarContainer : sidebarScroll;
+        if (target == null) return;
+        boolean currentlyVisible = target.isVisible();
+        target.setVisible(!currentlyVisible);
+        target.setManaged(!currentlyVisible);
         if (toggleSidebarButton != null) {
             toggleSidebarButton.setText(currentlyVisible ? "☰" : "◀");
             toggleSidebarButton.setTooltip(new Tooltip(currentlyVisible ? "Show Sidebar (Ctrl+B)" : "Hide Sidebar (Ctrl+B)"));
@@ -150,16 +174,17 @@ public class AppController {
             }
         }
 
-        Region spacer = new Region();
-        spacer.setMinHeight(10);
-        VBox.setVgrow(spacer, Priority.ALWAYS);
-        sidebar.getChildren().add(spacer);
-
-        Button logout = new Button("🚪 Logout");
-        logout.setMaxWidth(Double.MAX_VALUE);
-        logout.getStyleClass().addAll("sidebar-button", "sidebar-logout-button");
-        logout.setOnAction(e -> runSafely(this::confirmAndLogout));
-        sidebar.getChildren().add(logout);
+        // Pinned sticky logout button at the bottom of the sidebar
+        if (logoutButton != null) {
+            logoutButton.setOnAction(e -> runSafely(this::confirmAndLogout));
+        } else if (sidebarFooter != null) {
+            sidebarFooter.getChildren().clear();
+            Button logout = new Button("🚪 Logout");
+            logout.setMaxWidth(Double.MAX_VALUE);
+            logout.getStyleClass().addAll("sidebar-button", "sidebar-logout-button");
+            logout.setOnAction(e -> runSafely(this::confirmAndLogout));
+            sidebarFooter.getChildren().add(logout);
+        }
     }
 
     private Label categoryHeader(String text) {
@@ -209,7 +234,8 @@ public class AppController {
         }
     }
 
-    private void confirmAndLogout() {
+    @FXML
+    public void confirmAndLogout() {
         if (!com.nextit.util.Alerts.confirmLogout()) {
             return;
         }
@@ -220,7 +246,7 @@ public class AppController {
         Session.logout();
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/nextit/view/Login.fxml"));
-            Scene scene = new Scene(loader.load(), 900, 560);
+            Scene scene = new Scene(loader.load(), 1080, 690);
             scene.getStylesheets().add(getClass().getResource("/com/nextit/css/application.css").toExternalForm());
             LoginController controller = loader.getController();
             controller.setAuthenticationService(new AuthenticationService(new com.nextit.repository.JdbcUserRepository()));

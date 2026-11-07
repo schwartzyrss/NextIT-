@@ -17,7 +17,9 @@ public final class DatabaseConfig {
     private static final Logger log = LoggerFactory.getLogger(DatabaseConfig.class);
 
     private static final String DEFAULT_URL =
-            "jdbc:mysql://localhost:3306/nextit?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+            "jdbc:postgresql://aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require";
+    private static final String DEFAULT_USER = "postgres.qlmrcmaqkvtmciursqvr";
+    private static final String DEFAULT_PASSWORD = "NextIT.2026lolxz";
 
     private static final Properties DOT_ENV = loadDotEnv();
 
@@ -30,11 +32,11 @@ public final class DatabaseConfig {
     }
 
     public static String user() {
-        return value("SUPABASE_DB_USER", value("NEXTIT_DB_USER", "root"));
+        return value("SUPABASE_DB_USER", value("NEXTIT_DB_USER", DEFAULT_USER));
     }
 
     public static String password() {
-        return value("SUPABASE_DB_PASSWORD", value("NEXTIT_DB_PASSWORD", ""));
+        return value("SUPABASE_DB_PASSWORD", value("NEXTIT_DB_PASSWORD", DEFAULT_PASSWORD));
     }
 
     public static Connection getConnection() throws SQLException {

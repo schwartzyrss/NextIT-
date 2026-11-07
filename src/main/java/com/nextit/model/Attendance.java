@@ -8,22 +8,51 @@ public class Attendance {
     private String remarks;
     private int recordedBy;
 
-    public int getAttendanceId() { return attendanceId; }
-    public void setAttendanceId(int attendanceId) { this.attendanceId = attendanceId; }
+    public int getAttendanceId() {
+        return attendanceId;
+    }
 
-    public int getEnrollmentId() { return enrollmentId; }
-    public void setEnrollmentId(int enrollmentId) { this.enrollmentId = enrollmentId; }
+    public void setAttendanceId(int attendanceId) {
+        this.attendanceId = attendanceId;
+    }
 
-    public java.time.LocalDate getAttendanceDate() { return attendanceDate; }
-    public void setAttendanceDate(java.time.LocalDate attendanceDate) { this.attendanceDate = attendanceDate; }
+    public int getEnrollmentId() {
+        return enrollmentId;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setEnrollmentId(int enrollmentId) {
+        this.enrollmentId = enrollmentId;
+    }
 
-    public String getRemarks() { return remarks; }
-    public void setRemarks(String remarks) { this.remarks = remarks; }
+    public java.time.LocalDate getAttendanceDate() {
+        return attendanceDate;
+    }
 
-    public int getRecordedBy() { return recordedBy; }
-    public void setRecordedBy(int recordedBy) { this.recordedBy = recordedBy; }
+    public void setAttendanceDate(java.time.LocalDate attendanceDate) {
+        this.attendanceDate = attendanceDate;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getRemarks() {
+        return remarks;
+    }
+
+    public void setRemarks(String remarks) {
+        this.remarks = remarks;
+    }
+
+    public int getRecordedBy() {
+        return recordedBy;
+    }
+
+    public void setRecordedBy(int recordedBy) {
+        this.recordedBy = recordedBy;
+    }
 }
-

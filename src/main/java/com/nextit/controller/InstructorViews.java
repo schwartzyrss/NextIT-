@@ -41,7 +41,15 @@ public final class InstructorViews {
                 .filter(i -> i.getUserId() == Session.currentUser().getUserId())
                 .map(Instructor::getInstructorId)
                 .findFirst()
-                .orElseThrow(() -> new AppException("Instructor profile not found."));
+                .orElseGet(() -> {
+                    Instructor inst = new Instructor();
+                    inst.setUserId(Session.currentUser().getUserId());
+                    inst.setEmployeeNumber("EMP-" + String.format("%04d", Session.currentUser().getUserId()));
+                    inst.setDepartment("Computer Science");
+                    inst.setSpecialization("Software Engineering");
+                    new com.nextit.repository.JdbcInstructorRepository().save(inst);
+                    return inst.getInstructorId();
+                });
     }
 
     public static Node profile() {
@@ -152,8 +160,12 @@ public final class InstructorViews {
         search.textProperty().addListener((obs, old, value) -> filter.run());
         Button refresh = new Button("Refresh");
         refresh.setOnAction(e -> filter.run());
+        Button exportCsv = Ui.button("📥 Export CSV", "clay-btn-secondary");
+        exportCsv.setOnAction(e -> com.nextit.util.ExportService.exportTableViewToCsv(table, "students_roster.csv", "Enrolled Students Roster", exportCsv.getScene().getWindow()));
+        Button exportReport = Ui.button("📄 Print / PDF", "clay-btn-secondary");
+        exportReport.setOnAction(e -> com.nextit.util.ExportService.exportTableViewToHtmlReport(table, "students_roster_report.html", "Enrolled Students Roster", exportReport.getScene().getWindow()));
         return Ui.page("Students", "Browse the students enrolled in the program and their academic profile details.",
-                Ui.toolbar(new Label("Search:"), search, refresh), table);
+                Ui.toolbar(new Label("Search:"), search, refresh, exportCsv, exportReport), table);
     }
 
     public static Node portfolios() {
@@ -330,23 +342,345 @@ public final class InstructorViews {
     }
 
     public static Node dashboard() {
-        java.util.List<Grade> allGrades = academic.allGrades();
-        java.util.List<Attendance> allAttendance = academic.allAttendance();
-        javafx.scene.layout.HBox cards1 = new javafx.scene.layout.HBox(12,
-                Ui.card("Students", String.valueOf(directory.students().size())),
-                Ui.card("Grade Records", String.valueOf(allGrades.size())),
-                Ui.card("Attendance Records", String.valueOf(allAttendance.size())),
-                Ui.card("Skill Evaluations", String.valueOf(skills.all().size())));
-        javafx.scene.layout.HBox cards2 = new javafx.scene.layout.HBox(12,
-                Ui.card("Project Evaluations", String.valueOf(projects.allEvaluations().size())),
-                Ui.card("Academic Support", String.valueOf(support.all().size())),
-                Ui.card("Projects", String.valueOf(projects.allProjects().size())));
-        return Ui.page("Instructor Dashboard",
-                "Welcome, " + Session.currentUser().getFullName() + ". Manage grades, attendance, evaluations and student support.",
-                cards1, cards2,
-                DashboardCharts.row(
-                        DashboardCharts.attendanceSummary(allAttendance),
-                        DashboardCharts.averageByActivityType(allGrades)));
+        VBox rootBox = new VBox(20);
+        rootBox.getStyleClass().add("page");
+        rootBox.setFillWidth(true);
+
+        // 1. Hero cushion with status and live badges
+        HBox hero = new HBox(16);
+        hero.getStyleClass().add("page-header-cushion");
+        hero.setAlignment(Pos.CENTER_LEFT);
+
+        VBox heroTitles = new VBox(4);
+        heroTitles.getChildren().addAll(
+                Ui.title("Instructor Dashboard"),
+                Ui.subtitle("Welcome, " + Session.currentUser().getFullName() + ". Manage grades, attendance, evaluations, and student support.")
+        );
+
+        Region heroSpacer = new Region();
+        HBox.setHgrow(heroSpacer, Priority.ALWAYS);
+
+        HBox statusPillBox = new HBox(8);
+        statusPillBox.setAlignment(Pos.CENTER_RIGHT);
+        Label statusDot = new Label("🟢");
+        Label statusText = new Label("Faculty Portal Active");
+        statusText.setStyle("-fx-font-weight: bold; -fx-text-fill: #2d6a4f; -fx-font-size: 12px;");
+        HBox liveChip = new HBox(6, statusDot, statusText);
+        liveChip.setAlignment(Pos.CENTER);
+        liveChip.getStyleClass().addAll("badge-pill", "badge-pill-mint");
+
+        Label termChip = Ui.badge("AY 2026-2027 • 1st Sem", "badge-pill-lavender");
+        statusPillBox.getChildren().addAll(liveChip, termChip);
+
+        hero.getChildren().addAll(heroTitles, heroSpacer, statusPillBox);
+
+        // 2. Full-Width 4-Column Stat Cards (Row 1 & Row 2)
+        HBox cards1 = new HBox(14);
+        HBox cards2 = new HBox(14);
+        cards1.setFillHeight(true);
+        cards2.setFillHeight(true);
+
+        // 3. Main Dashboard Body: Left Work Area + Dedicated Right Side Panel
+        HBox dashboardBody = new HBox(20);
+        dashboardBody.setAlignment(Pos.TOP_LEFT);
+
+        VBox leftColumn = new VBox(20);
+        HBox.setHgrow(leftColumn, Priority.ALWAYS);
+
+        VBox rightColumnHolder = new VBox();
+
+        // Left Component A: Dual Charts Row
+        HBox chartsRow = new HBox(14);
+        chartsRow.setAlignment(Pos.TOP_LEFT);
+
+        // Left Component B: Recent Student Grades Table Tray
+        VBox gradesTray = new VBox(14);
+        gradesTray.getStyleClass().add("clay-tray");
+        gradesTray.setFillWidth(true);
+
+        Map<Integer, Enrollment> enrollments = enrollmentIndex();
+        Map<Integer, String> students = directory.studentNames();
+        Map<Integer, String> subjects = directory.subjectNames();
+
+        TableView<Grade> gradeTable = Ui.table("No grade records found matching filter.");
+        gradeTable.setPrefHeight(290);
+        gradeTable.setMinHeight(220);
+
+        Ui.addColumn(gradeTable, "Student", g -> studentLabel(g.getEnrollmentId(), enrollments, students));
+        Ui.addColumn(gradeTable, "Subject", g -> subjectLabel(g.getEnrollmentId(), enrollments, subjects));
+        Ui.addColumn(gradeTable, "Activity", Grade::getActivityName);
+        gradeTable.getColumns().add(Ui.actionColumn("Type", g -> {
+            String t = g.getActivityType() == null ? "Activity" : g.getActivityType();
+            String pill = switch (t.toLowerCase(Locale.ROOT)) {
+                case "examination" -> "badge-pill-pink";
+                case "laboratory" -> "badge-pill-blue";
+                case "quiz" -> "badge-pill-yellow";
+                case "project" -> "badge-pill-mint";
+                default -> "badge-pill-lavender";
+            };
+            return Ui.badge(t, pill);
+        }));
+        Ui.addColumn(gradeTable, "Score", g -> g.getScore() + " / " + g.getMaxScore());
+        gradeTable.getColumns().add(Ui.actionColumn("Grade", g -> {
+            String grText = g.getGrade() == null ? "" : String.format("%.1f%%", g.getGrade());
+            return Ui.badge(grText, "badge-pill-cream");
+        }));
+        Ui.addColumn(gradeTable, "Recorded", g -> g.getRecordedAt() == null ? "" : g.getRecordedAt().toLocalDate().toString());
+
+        TextField searchGrades = Ui.field("Filter by student, subject, or activity...");
+        searchGrades.setPrefWidth(240);
+
+        ComboBox<String> typeFilter = new ComboBox<>(FXCollections.observableArrayList(
+                "All Types", "Quiz", "Examination", "Laboratory", "Project", "Assignment"));
+        typeFilter.setValue("All Types");
+
+        HBox trayHeader = new HBox(12);
+        trayHeader.setAlignment(Pos.CENTER_LEFT);
+
+        VBox trayTitles = new VBox(3);
+        Label trayTitle = new Label("Recent Grade Entries");
+        trayTitle.getStyleClass().add("tray-title");
+        Label traySub = new Label("Student performance records and activity evaluations");
+        traySub.getStyleClass().add("tray-subtitle");
+        trayTitles.getChildren().addAll(trayTitle, traySub);
+
+        Region traySpacer = new Region();
+        HBox.setHgrow(traySpacer, Priority.ALWAYS);
+
+        Button exportCsvBtn = Ui.button("📥 Export CSV", "clay-btn-secondary");
+        exportCsvBtn.setOnAction(e -> com.nextit.util.ExportService.exportTableViewToCsv(gradeTable, "instructor_grades.csv", "Student Grade Records", exportCsvBtn.getScene().getWindow()));
+
+        Button exportReportBtn = Ui.button("📄 Print / PDF", "clay-btn-secondary");
+        exportReportBtn.setOnAction(e -> com.nextit.util.ExportService.exportTableViewToHtmlReport(gradeTable, "instructor_grades_report.html", "Student Grade Records", exportReportBtn.getScene().getWindow()));
+
+        trayHeader.getChildren().addAll(trayTitles, traySpacer, searchGrades, typeFilter, exportCsvBtn, exportReportBtn);
+        gradesTray.getChildren().addAll(trayHeader, gradeTable);
+
+        leftColumn.getChildren().addAll(chartsRow, gradesTray);
+        dashboardBody.getChildren().addAll(leftColumn, rightColumnHolder);
+
+        // Self-refreshing dashboard logic
+        final Runnable[] refreshHolder = new Runnable[1];
+        Runnable refreshDashboard = () -> {
+            List<Grade> allGrades = academic.allGrades();
+            List<Attendance> allAttendance = academic.allAttendance();
+
+            // Refresh Map Lookups
+            enrollments.clear();
+            enrollments.putAll(enrollmentIndex());
+            students.clear();
+            students.putAll(directory.studentNames());
+            subjects.clear();
+            subjects.putAll(directory.subjectNames());
+
+            // 1. Update 8 Full-Width Stat Cards
+            cards1.getChildren().clear();
+            cards2.getChildren().clear();
+
+            VBox c1 = Ui.card("Students", String.valueOf(directory.students().size()));
+            VBox c2 = Ui.card("Grade Records", String.valueOf(allGrades.size()));
+            VBox c3 = Ui.card("Attendance Records", String.valueOf(allAttendance.size()));
+            VBox c4 = Ui.card("Skill Evaluations", String.valueOf(skills.all().size()));
+
+            VBox c5 = Ui.card("Project Evaluations", String.valueOf(projects.allEvaluations().size()));
+            VBox c6 = Ui.card("Academic Support", String.valueOf(support.all().size()));
+            VBox c7 = Ui.card("Projects", String.valueOf(projects.allProjects().size()));
+            VBox c8 = Ui.card("Catalog Subjects", String.valueOf(directory.subjects().size()));
+
+            for (VBox c : List.of(c1, c2, c3, c4, c5, c6, c7, c8)) {
+                HBox.setHgrow(c, Priority.ALWAYS);
+                c.setMaxWidth(Double.MAX_VALUE);
+            }
+
+            cards1.getChildren().addAll(c1, c2, c3, c4);
+            cards2.getChildren().addAll(c5, c6, c7, c8);
+
+            // 2. Update Dual Charts
+            chartsRow.getChildren().clear();
+            Node attendanceChart = DashboardCharts.attendanceSummary(allAttendance);
+            Node gradesChart = DashboardCharts.averageByActivityType(allGrades);
+            HBox.setHgrow(attendanceChart, Priority.ALWAYS);
+            HBox.setHgrow(gradesChart, Priority.ALWAYS);
+            chartsRow.getChildren().addAll(attendanceChart, gradesChart);
+
+            // 3. Update Right Side Panel
+            rightColumnHolder.getChildren().clear();
+            VBox rightPanel = createInstructorRightSidePanel(allAttendance, allGrades, enrollments, students, () -> refreshHolder[0].run());
+            rightColumnHolder.getChildren().add(rightPanel);
+
+            // 4. Update Grades Table
+            String q = searchGrades.getText() == null ? "" : searchGrades.getText().toLowerCase(Locale.ROOT);
+            String selectedType = typeFilter.getValue();
+            List<Grade> filtered = allGrades.stream().filter(g -> {
+                String sName = studentLabel(g.getEnrollmentId(), enrollments, students).toLowerCase(Locale.ROOT);
+                String subName = subjectLabel(g.getEnrollmentId(), enrollments, subjects).toLowerCase(Locale.ROOT);
+                String actName = String.valueOf(g.getActivityName()).toLowerCase(Locale.ROOT);
+                boolean matchesQ = q.isBlank() || sName.contains(q) || subName.contains(q) || actName.contains(q);
+                boolean matchesType = selectedType == null || "All Types".equalsIgnoreCase(selectedType)
+                        || String.valueOf(g.getActivityType()).equalsIgnoreCase(selectedType);
+                return matchesQ && matchesType;
+            }).toList();
+            gradeTable.setItems(FXCollections.observableArrayList(filtered));
+        };
+        refreshHolder[0] = refreshDashboard;
+
+        // Action Column: Edit Grade
+        gradeTable.getColumns().add(Ui.actionColumn("Action", g -> {
+            Button editBtn = new Button("Edit");
+            editBtn.setStyle("-fx-font-size: 11px; -fx-padding: 3 10; -fx-background-radius: 12;");
+            editBtn.setOnAction(ev -> editGrade(g, refreshDashboard));
+            return editBtn;
+        }));
+
+        searchGrades.textProperty().addListener((obs, old, val) -> refreshDashboard.run());
+        typeFilter.valueProperty().addListener((obs, old, val) -> refreshDashboard.run());
+
+        refreshDashboard.run();
+
+        rootBox.getChildren().addAll(hero, cards1, cards2, dashboardBody);
+        return rootBox;
+    }
+
+    private static VBox createInstructorRightSidePanel(List<Attendance> allAttendance, List<Grade> allGrades,
+                                                       Map<Integer, Enrollment> enrollments,
+                                                       Map<Integer, String> students, Runnable refresh) {
+        VBox rightSide = new VBox(16);
+        rightSide.setPrefWidth(360);
+        rightSide.setMinWidth(320);
+
+        // 1. Quick Actions Launcher
+        VBox quickActions = new VBox(12);
+        quickActions.getStyleClass().add("clay-tray");
+
+        Label actTitle = new Label("Quick Actions");
+        actTitle.getStyleClass().add("tray-title");
+        Label actSub = new Label("Faculty academic shortcuts");
+        actSub.getStyleClass().add("tray-subtitle");
+
+        Button recordGradeBtn = new Button("📝  Record Student Grade");
+        recordGradeBtn.setMaxWidth(Double.MAX_VALUE);
+        recordGradeBtn.getStyleClass().add("primary-button");
+        recordGradeBtn.setOnAction(e -> editGrade(null, refresh));
+
+        Button recordAttendanceBtn = new Button("📅  Log Class Attendance");
+        recordAttendanceBtn.setMaxWidth(Double.MAX_VALUE);
+        recordAttendanceBtn.getStyleClass().add("secondary-button");
+        recordAttendanceBtn.setOnAction(e -> editAttendance(null, refresh));
+
+        Button refreshBtn = new Button("🔄  Refresh Academic Stats");
+        refreshBtn.setMaxWidth(Double.MAX_VALUE);
+        refreshBtn.getStyleClass().add("secondary-button");
+        refreshBtn.setOnAction(e -> {
+            refresh.run();
+            Alerts.info("Academic stats refreshed.");
+        });
+
+        quickActions.getChildren().addAll(new VBox(3, actTitle, actSub), recordGradeBtn, recordAttendanceBtn, refreshBtn);
+
+        // 2. Class Engagement & Health Card
+        VBox engagementCard = new VBox(14);
+        engagementCard.getStyleClass().add("clay-tray");
+
+        Label engTitle = new Label("Academic Engagement");
+        engTitle.getStyleClass().add("tray-title");
+        Label engSub = new Label("Classroom participation & grading");
+        engSub.getStyleClass().add("tray-subtitle");
+
+        VBox queueBox = new VBox(8);
+        Label queueHeader = new Label("CLASSROOM METRICS");
+        queueHeader.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #8e8394; -fx-letter-spacing: 0.5px;");
+
+        long presentCount = allAttendance.stream().filter(a -> "Present".equalsIgnoreCase(a.getStatus())).count();
+
+        HBox attRow = new HBox(8);
+        attRow.setAlignment(Pos.CENTER_LEFT);
+        Label aLabel = new Label("Attendance Logged:");
+        aLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+        Region aSp = new Region();
+        HBox.setHgrow(aSp, Priority.ALWAYS);
+        Node aBadge = Ui.badge(allAttendance.size() + " (" + presentCount + " Present)", "badge-pill-mint");
+        attRow.getChildren().addAll(aLabel, aSp, aBadge);
+
+        HBox gradeRow = new HBox(8);
+        gradeRow.setAlignment(Pos.CENTER_LEFT);
+        Label gLabel = new Label("Graded Activities:");
+        gLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+        Region gSp = new Region();
+        HBox.setHgrow(gSp, Priority.ALWAYS);
+        Node gBadge = Ui.badge(allGrades.size() + " Submissions", "badge-pill-blue");
+        gradeRow.getChildren().addAll(gLabel, gSp, gBadge);
+
+        HBox supRow = new HBox(8);
+        supRow.setAlignment(Pos.CENTER_LEFT);
+        Label sLabel = new Label("Support Requests:");
+        sLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+        Region sSp = new Region();
+        HBox.setHgrow(sSp, Priority.ALWAYS);
+        Node sBadge = Ui.badge(support.all().size() + " Active", "badge-pill-lavender");
+        supRow.getChildren().addAll(sLabel, sSp, sBadge);
+
+        queueBox.getChildren().addAll(queueHeader, attRow, gradeRow, supRow);
+
+        Separator sep = new Separator();
+
+        // Faculty clearance
+        VBox facultyBox = new VBox(6);
+        Label fHeader = new Label("FACULTY CLEARANCE");
+        fHeader.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #8e8394; -fx-letter-spacing: 0.5px;");
+        Label fName = new Label(Session.currentUser().getFullName());
+        fName.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+        Label fRole = new Label("Instructor / Faculty Evaluator");
+        fRole.setStyle("-fx-font-size: 11px; -fx-text-fill: #8e8394;");
+        facultyBox.getChildren().addAll(fHeader, fName, fRole);
+
+        engagementCard.getChildren().addAll(new VBox(3, engTitle, engSub), queueBox, sep, facultyBox);
+
+        // 3. Recent Submissions Stream
+        VBox recentGradesCard = new VBox(12);
+        recentGradesCard.getStyleClass().add("clay-tray");
+        Label rTitle = new Label("Latest Grade Submissions");
+        rTitle.getStyleClass().add("tray-title");
+        Label rSub = new Label("Recent student evaluations");
+        rSub.getStyleClass().add("tray-subtitle");
+        recentGradesCard.getChildren().add(new VBox(3, rTitle, rSub));
+
+        List<Grade> latestGrades = allGrades.stream()
+                .sorted((a, b) -> Integer.compare(b.getGradeId(), a.getGradeId()))
+                .limit(3)
+                .toList();
+
+        if (latestGrades.isEmpty()) {
+            Label empty = new Label("No graded submissions yet.");
+            empty.setStyle("-fx-font-size: 11px; -fx-text-fill: #8e8394;");
+            recentGradesCard.getChildren().add(empty);
+        } else {
+            for (Grade g : latestGrades) {
+                HBox item = new HBox(10);
+                item.setAlignment(Pos.CENTER_LEFT);
+                item.getStyleClass().add("activity-item");
+
+                String stName = studentLabel(g.getEnrollmentId(), enrollments, students);
+                StackPane avatar = Ui.avatar(Ui.initials(stName), "avatar-pink");
+                avatar.setPrefSize(32, 32);
+                avatar.setMinSize(32, 32);
+
+                VBox info = new VBox(2);
+                Label name = new Label(stName);
+                name.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+                Label act = new Label(Ui.value(g.getActivityName()));
+                act.setStyle("-fx-font-size: 10px; -fx-text-fill: #8e8394;");
+                info.getChildren().addAll(name, act);
+                HBox.setHgrow(info, Priority.ALWAYS);
+
+                String grText = g.getGrade() == null ? "" : String.format("%.1f%%", g.getGrade());
+                Label scoreBadge = Ui.badge(grText, "badge-pill-yellow");
+                item.getChildren().addAll(avatar, info, scoreBadge);
+                recentGradesCard.getChildren().add(item);
+            }
+        }
+
+        rightSide.getChildren().addAll(quickActions, engagementCard, recentGradesCard);
+        return rightSide;
     }
 
     public static Node grades() {

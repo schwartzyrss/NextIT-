@@ -43,9 +43,8 @@ public final class EmailService {
     private EmailService() {}
 
     public static boolean isConfigured() {
-        String user = getSetting("SMTP_USER", null);
-        String pass = getSetting("SMTP_PASSWORD", null);
-        if (pass == null) pass = getSetting("SMTP_PASS", null);
+        String user = getSetting("SMTP_USER", "zyrajoyce06@gmail.com");
+        String pass = getSetting("SMTP_PASSWORD", getSetting("SMTP_PASS", "kcebkxcjlluabgpb"));
         return user != null && !user.isBlank() && pass != null && !pass.isBlank();
     }
 
@@ -61,10 +60,10 @@ public final class EmailService {
 
         String host = getSetting("SMTP_HOST", "smtp.gmail.com").trim();
         String port = getSetting("SMTP_PORT", "587").trim();
-        String username = getSetting("SMTP_USER", "").trim();
-        String rawPassword = getSetting("SMTP_PASSWORD", getSetting("SMTP_PASS", ""));
+        String username = getSetting("SMTP_USER", "zyrajoyce06@gmail.com").trim();
+        String rawPassword = getSetting("SMTP_PASSWORD", getSetting("SMTP_PASS", "kceb_kxcj_llua_bgpb"));
         String password = rawPassword != null ? rawPassword.replace(" ", "").trim() : "";
-        String fromAddress = getSetting("SMTP_FROM", username).trim();
+        String fromAddress = getSetting("SMTP_FROM", "NextIT Verification <" + username + ">").trim();
 
         boolean isSsl = "465".equals(port) || "true".equalsIgnoreCase(getSetting("SMTP_SECURE", "false"));
 
@@ -116,12 +115,12 @@ public final class EmailService {
                     <h2 style="font-size: 20px; margin-top: 0; color: #383139;">Verify Your Account</h2>
                     <p style="font-size: 14px; color: #5E5360; line-height: 1.5;">Please use the following 6-digit confirmation code to complete your NextIT account verification:</p>
                     <div style="display: inline-block; background: #F1F2FA; padding: 14px 28px; border-radius: 16px; font-size: 32px; font-weight: 900; letter-spacing: 6px; color: #383139; margin: 20px 0; border: 2px solid #F6A3CA;">
-                      %s
+                      {{CODE}}
                     </div>
                     <p style="font-size: 12px; color: #7A727D; margin-bottom: 0;">This code will expire in 10 minutes. If you did not request this, please ignore this email.</p>
                   </div>
                 </div>
-                """.formatted(otpCode);
+                """.replace("{{CODE}}", otpCode);
 
             message.setContent(htmlContent, "text/html; charset=utf-8");
             Transport.send(message);
