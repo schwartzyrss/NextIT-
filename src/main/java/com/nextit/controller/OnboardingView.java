@@ -13,6 +13,7 @@ import com.nextit.repository.JdbcUserRepository;
 import com.nextit.security.Session;
 import com.nextit.service.AuthenticationService;
 import com.nextit.service.EmailService;
+import com.nextit.service.OtpService;
 import com.nextit.util.Alerts;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
@@ -38,25 +39,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OnboardingView {
 
     private static final Logger log = LoggerFactory.getLogger(OnboardingView.class);
-
-    private static class OtpRecord {
-        final String code;
-        final long expiresAt;
-        final long resendAvailableAt;
-        int failedAttempts;
-
-        OtpRecord(String code, long expiresAt, long resendAvailableAt) {
-            this.code = code;
-            this.expiresAt = expiresAt;
-            this.resendAvailableAt = resendAvailableAt;
-            this.failedAttempts = 0;
-        }
-    }
-
-    private static final Map<String, OtpRecord> ACTIVE_OTPS = new ConcurrentHashMap<>();
-    private static final long OTP_TTL_MS = 10 * 60 * 1000;       // 10 minutes
-    private static final long COOLDOWN_MS = 30 * 1000;          // 30 seconds
-    private static final int MAX_FAILED_ATTEMPTS = 5;
 
     public static void open(Stage stage) {
         try {
@@ -107,49 +89,32 @@ public class OnboardingView {
         }
 
         public String requestOtp(String email) {
-            String cleanEmail = (email != null) ? email.trim().toLowerCase() : "";
-            long now = System.currentTimeMillis();
-
-            OtpRecord existing = ACTIVE_OTPS.get(cleanEmail);
-            if (existing != null && now < existing.resendAvailableAt) {
-                // Rate limited
-                return String.format("{\"sent\":false,\"configured\":%b,\"code\":\"%s\",\"rateLimited\":true}",
-                        EmailService.isConfigured(), existing.code);
-            }
-
-            String code = String.format("%06d", new SecureRandom().nextInt(1000000));
-            ACTIVE_OTPS.put(cleanEmail, new OtpRecord(code, now + OTP_TTL_MS, now + COOLDOWN_MS));
-
-            boolean sent = EmailService.sendOtpEmail(cleanEmail, code);
-            boolean configured = EmailService.isConfigured();
-
-            log.info("Requested OTP for {}: code={}, sent={}, smtpConfigured={}", cleanEmail, code, sent, configured);
-            return String.format("{\"sent\":%b,\"configured\":%b,\"code\":\"%s\",\"rateLimited\":false}", sent, configured, code);
+            OtpService.OtpResponse resp = OtpService.requestOtp(email);
+            String safeMsg = resp.message() != null ? resp.message().replace("\"", "\\\"").replace("\n", " ") : "";
+            return String.format("{\"sent\":%b,\"configured\":%b,\"code\":\"%s\",\"rateLimited\":%b,\"message\":\"%s\"}",
+                    resp.sent(), resp.configured(), resp.code(), resp.rateLimited(), safeMsg);
         }
 
         public boolean verifyOtp(String email, String enteredCode) {
-            if (email == null || enteredCode == null) return false;
-            String cleanEmail = email.trim().toLowerCase();
-            long now = System.currentTimeMillis();
+            return OtpService.verifyOtp(email, enteredCode);
+        }
 
-            OtpRecord record = ACTIVE_OTPS.get(cleanEmail);
-            if (record == null) return false;
-
-            if (now > record.expiresAt || record.failedAttempts >= MAX_FAILED_ATTEMPTS) {
-                ACTIVE_OTPS.remove(cleanEmail);
-                return false;
+        public String saveSmtpSettings(String host, String port, String user, String pass, String from, String emailToTest) {
+            try {
+                EmailService.updateAndPersistConfig(host, port, user, pass, from);
+                String targetEmail = (emailToTest != null && !emailToTest.isBlank()) ? emailToTest.trim() : user.trim();
+                OtpService.OtpResponse resp = OtpService.requestOtp(targetEmail);
+                if (resp.sent()) {
+                    return String.format("{\"success\":true,\"message\":\"SMTP configured successfully! Code sent to %s\",\"code\":\"%s\"}",
+                            targetEmail, resp.code());
+                } else {
+                    String safeErr = (resp.message() != null ? resp.message() : "Failed to deliver email").replace("\"", "\\\"").replace("\n", " ");
+                    return String.format("{\"success\":false,\"message\":\"%s\"}", safeErr);
+                }
+            } catch (Exception e) {
+                String safeErr = (e.getMessage() != null ? e.getMessage() : e.toString()).replace("\"", "\\\"").replace("\n", " ");
+                return String.format("{\"success\":false,\"message\":\"%s\"}", safeErr);
             }
-
-            if (record.code.equals(enteredCode.trim())) {
-                ACTIVE_OTPS.remove(cleanEmail); // Single use
-                return true;
-            }
-
-            record.failedAttempts++;
-            if (record.failedAttempts >= MAX_FAILED_ATTEMPTS) {
-                ACTIVE_OTPS.remove(cleanEmail);
-            }
-            return false;
         }
 
         public void registerAndLaunch(String roleStr, String username, String firstName, String lastName,
