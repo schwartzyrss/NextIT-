@@ -171,8 +171,20 @@ public final class StudentViews {
             enrollments.put(e.getEnrollmentId(), subjects.getOrDefault(e.getSubjectId(), "Subject #" + e.getSubjectId()));
         }
 
-        TableView<Enrollment> subjectTable = Ui.table();
-        Ui.addColumn(subjectTable, "Subject", e -> subjects.getOrDefault(e.getSubjectId(), "Subject #" + e.getSubjectId()));
+        Map<Integer, Subject> subjectMap = directory.subjectMap();
+        TableView<Enrollment> subjectTable = Ui.table("No subjects available.");
+        Ui.addColumn(subjectTable, "Subject Code", e -> {
+            Subject s = subjectMap.get(e.getSubjectId());
+            return s != null ? s.getSubjectCode() : "SUBJ-" + e.getSubjectId();
+        });
+        Ui.addColumn(subjectTable, "Subject Title", e -> {
+            Subject s = subjectMap.get(e.getSubjectId());
+            return s != null ? s.getSubjectName() : "Subject #" + e.getSubjectId();
+        });
+        Ui.addColumn(subjectTable, "Units", e -> {
+            Subject s = subjectMap.get(e.getSubjectId());
+            return s != null ? String.valueOf(s.getUnits()) : "3.0";
+        });
         Ui.addColumn(subjectTable, "Academic Year", Enrollment::getAcademicYear);
         Ui.addColumn(subjectTable, "Semester", Enrollment::getSemester);
         Ui.addColumn(subjectTable, "Status", Enrollment::getStatus);

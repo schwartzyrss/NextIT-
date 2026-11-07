@@ -215,9 +215,13 @@ public final class Ui {
     }
 
     public static <T> TableView<T> table() {
+        return table("No records to display.");
+    }
+
+    public static <T> TableView<T> table(String emptyMessage) {
         TableView<T> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        Label empty = new Label("No records to display.");
+        Label empty = new Label(emptyMessage != null ? emptyMessage : "No records to display.");
         empty.getStyleClass().add("empty-state");
         table.setPlaceholder(empty);
         VBox.setVgrow(table, Priority.ALWAYS);

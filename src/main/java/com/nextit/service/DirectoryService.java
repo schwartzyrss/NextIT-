@@ -67,6 +67,11 @@ public class DirectoryService {
                 Subject::getSubjectId, Subject::getSubjectName, (a, b) -> a));
     }
 
+    public Map<Integer, Subject> subjectMap() {
+        return subjectRepo.findAll().stream().collect(Collectors.toMap(
+                Subject::getSubjectId, s -> s, (a, b) -> a));
+    }
+
     public Map<Integer, String> skillNames() {
         return skillRepo.findAll().stream().collect(Collectors.toMap(
                 TechnicalSkill::getSkillId,
