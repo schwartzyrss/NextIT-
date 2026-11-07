@@ -66,20 +66,22 @@ public class AppController {
 
     private void buildSidebar(User user) {
         sidebar.getChildren().clear();
-        Button dashboard = navButton("Dashboard", () -> showDashboard(user));
+        sidebar.getChildren().add(categoryHeader("Main Menu"));
+        Button dashboard = navButton("📊 Dashboard", () -> showDashboard(user));
         sidebar.getChildren().add(dashboard);
         setActiveButton(dashboard);
         switch (user.getRole()) {
             case STUDENT -> {
-                sidebar.getChildren().add(navButton("Profile", () -> contentPane.setCenter(StudentViews.profile())));
-                sidebar.getChildren().add(navButton("Academic", () -> contentPane.setCenter(StudentViews.academic())));
-                sidebar.getChildren().add(navButton("Skills", () -> contentPane.setCenter(StudentViews.skills())));
-                sidebar.getChildren().add(navButton("Projects", () -> contentPane.setCenter(StudentViews.projects())));
-                sidebar.getChildren().add(navButton("Achievements", () -> contentPane.setCenter(StudentViews.achievements())));
-                sidebar.getChildren().add(navButton("Certifications", () -> contentPane.setCenter(StudentViews.certifications())));
-                sidebar.getChildren().add(navButton("Portfolio", () -> contentPane.setCenter(StudentViews.portfolio())));
-                sidebar.getChildren().add(navButton("Opportunities", () -> contentPane.setCenter(StudentViews.opportunities())));
-                sidebar.getChildren().add(navButton("Applications", () -> contentPane.setCenter(StudentViews.applications())));
+                sidebar.getChildren().add(categoryHeader("Academic"));
+                sidebar.getChildren().add(navButton("👤 Profile", () -> contentPane.setCenter(StudentViews.profile())));
+                sidebar.getChildren().add(navButton("📚 Academic", () -> contentPane.setCenter(StudentViews.academic())));
+                sidebar.getChildren().add(navButton("💻 Skills", () -> contentPane.setCenter(StudentViews.skills())));
+                sidebar.getChildren().add(navButton("🚀 Projects", () -> contentPane.setCenter(StudentViews.projects())));
+                sidebar.getChildren().add(navButton("🏆 Achievements", () -> contentPane.setCenter(StudentViews.achievements())));
+                sidebar.getChildren().add(navButton("🎓 Certifications", () -> contentPane.setCenter(StudentViews.certifications())));
+                sidebar.getChildren().add(navButton("📁 Portfolio", () -> contentPane.setCenter(StudentViews.portfolio())));
+                sidebar.getChildren().add(navButton("🌟 Opportunities", () -> contentPane.setCenter(StudentViews.opportunities())));
+                sidebar.getChildren().add(navButton("📝 Applications", () -> contentPane.setCenter(StudentViews.applications())));
             }
             case INSTRUCTOR -> {
                 sidebar.getChildren().add(categoryHeader("Academic Management"));
@@ -107,32 +109,44 @@ public class AppController {
                 sidebar.getChildren().add(navButton("👤 My Profile", () -> contentPane.setCenter(InstructorViews.profile())));
             }
             case EMPLOYER -> {
-                sidebar.getChildren().add(navButton("Company Profile", () -> contentPane.setCenter(EmployerViews.profile())));
-                sidebar.getChildren().add(navButton("Opportunities", () -> contentPane.setCenter(EmployerViews.opportunities())));
-                sidebar.getChildren().add(navButton("Applications", () -> contentPane.setCenter(EmployerViews.applications())));
-                sidebar.getChildren().add(navButton("Portfolio Search", () -> contentPane.setCenter(EmployerViews.portfolioSearch())));
+                sidebar.getChildren().add(categoryHeader("Company"));
+                sidebar.getChildren().add(navButton("🏢 Company Profile", () -> contentPane.setCenter(EmployerViews.profile())));
+                sidebar.getChildren().add(navButton("🌟 Opportunities", () -> contentPane.setCenter(EmployerViews.opportunities())));
+                sidebar.getChildren().add(navButton("📝 Applications", () -> contentPane.setCenter(EmployerViews.applications())));
+                sidebar.getChildren().add(navButton("🔍 Portfolio Search", () -> contentPane.setCenter(EmployerViews.portfolioSearch())));
             }
             case ADMIN -> {
-                sidebar.getChildren().add(navButton("Profile", () -> contentPane.setCenter(AdminViews.profile())));
-                sidebar.getChildren().add(navButton("Users", () -> contentPane.setCenter(AdminViews.users())));
-                sidebar.getChildren().add(navButton("Subjects", () -> contentPane.setCenter(AdminViews.subjects())));
-                sidebar.getChildren().add(navButton("Enrollments", () -> contentPane.setCenter(AdminViews.enrollments())));
-                sidebar.getChildren().add(navButton("Grades", () -> contentPane.setCenter(AdminViews.grades())));
-                sidebar.getChildren().add(navButton("Attendance", () -> contentPane.setCenter(AdminViews.attendance())));
-                sidebar.getChildren().add(navButton("Technical Skills", () -> contentPane.setCenter(AdminViews.skills())));
-                sidebar.getChildren().add(navButton("Technical Evaluations", () -> contentPane.setCenter(AdminViews.technicalEvaluations())));
-                sidebar.getChildren().add(navButton("Projects", () -> contentPane.setCenter(AdminViews.projects())));
-                sidebar.getChildren().add(navButton("Project Evaluations", () -> contentPane.setCenter(AdminViews.projectEvaluations())));
-                sidebar.getChildren().add(navButton("Achievements", () -> contentPane.setCenter(AdminViews.achievements())));
-                sidebar.getChildren().add(navButton("Certifications", () -> contentPane.setCenter(AdminViews.certifications())));
-                sidebar.getChildren().add(navButton("Academic Support", () -> contentPane.setCenter(AdminViews.academicSupport())));
-                sidebar.getChildren().add(navButton("Students", () -> contentPane.setCenter(AdminViews.students())));
-                sidebar.getChildren().add(navButton("Instructors", () -> contentPane.setCenter(AdminViews.instructors())));
-                sidebar.getChildren().add(navButton("Employers", () -> contentPane.setCenter(AdminViews.employers())));
-                sidebar.getChildren().add(navButton("Opportunities", () -> contentPane.setCenter(AdminViews.opportunities())));
-                sidebar.getChildren().add(navButton("Applications", () -> contentPane.setCenter(AdminViews.applications())));
-                sidebar.getChildren().add(navButton("Portfolios", () -> contentPane.setCenter(AdminViews.portfolios())));
-                sidebar.getChildren().add(navButton("System", () -> contentPane.setCenter(AdminViews.system())));
+                sidebar.getChildren().add(categoryHeader("System & Academics"));
+                sidebar.getChildren().add(navButton("👥 Users", () -> contentPane.setCenter(AdminViews.users())));
+                sidebar.getChildren().add(navButton("📖 Subjects", () -> contentPane.setCenter(AdminViews.subjects())));
+                sidebar.getChildren().add(navButton("➕ Enrollments", () -> contentPane.setCenter(AdminViews.enrollments())));
+
+                sidebar.getChildren().add(categoryHeader("Records & Tracking"));
+                sidebar.getChildren().add(navButton("📅 Attendance", () -> contentPane.setCenter(AdminViews.attendance())));
+                sidebar.getChildren().add(navButton("📊 Grades", () -> contentPane.setCenter(AdminViews.grades())));
+
+                sidebar.getChildren().add(categoryHeader("Skills & Evaluations"));
+                sidebar.getChildren().add(navButton("💻 Technical Skills", () -> contentPane.setCenter(AdminViews.skills())));
+                sidebar.getChildren().add(navButton("📋 Technical Evaluations", () -> contentPane.setCenter(AdminViews.technicalEvaluations())));
+                sidebar.getChildren().add(navButton("📁 Projects", () -> contentPane.setCenter(AdminViews.projects())));
+                sidebar.getChildren().add(navButton("📑 Project Evaluations", () -> contentPane.setCenter(AdminViews.projectEvaluations())));
+
+                sidebar.getChildren().add(categoryHeader("Achievements & Support"));
+                sidebar.getChildren().add(navButton("🏆 Achievements", () -> contentPane.setCenter(AdminViews.achievements())));
+                sidebar.getChildren().add(navButton("🎓 Certifications", () -> contentPane.setCenter(AdminViews.certifications())));
+                sidebar.getChildren().add(navButton("💡 Academic Support", () -> contentPane.setCenter(AdminViews.academicSupport())));
+
+                sidebar.getChildren().add(categoryHeader("Directory & Partners"));
+                sidebar.getChildren().add(navButton("🧑‍🎓 Students", () -> contentPane.setCenter(AdminViews.students())));
+                sidebar.getChildren().add(navButton("👩‍🏫 Instructors", () -> contentPane.setCenter(AdminViews.instructors())));
+                sidebar.getChildren().add(navButton("🏢 Employers", () -> contentPane.setCenter(AdminViews.employers())));
+                sidebar.getChildren().add(navButton("🌟 Opportunities", () -> contentPane.setCenter(AdminViews.opportunities())));
+                sidebar.getChildren().add(navButton("📝 Applications", () -> contentPane.setCenter(AdminViews.applications())));
+                sidebar.getChildren().add(navButton("📁 Portfolios", () -> contentPane.setCenter(AdminViews.portfolios())));
+                sidebar.getChildren().add(navButton("⚙ System Config", () -> contentPane.setCenter(AdminViews.system())));
+
+                sidebar.getChildren().add(categoryHeader("User Settings"));
+                sidebar.getChildren().add(navButton("👤 Profile", () -> contentPane.setCenter(AdminViews.profile())));
             }
         }
 
