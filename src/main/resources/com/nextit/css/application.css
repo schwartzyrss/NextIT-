@@ -666,6 +666,23 @@
     -fx-background-color: #f6a3ca;
 }
 
+.demo-pill-btn {
+    -fx-background-color: #f0edf6;
+    -fx-background-radius: 999;
+    -fx-text-fill: #4e3975;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 4 9;
+    -fx-cursor: hand;
+    -fx-border-color: rgba(255, 255, 255, 0.85);
+    -fx-border-radius: 999;
+}
+
+.demo-pill-btn:hover {
+    -fx-background-color: #ffd6e7;
+    -fx-text-fill: #5a1f40;
+}
+
 .error-label {
     -fx-text-fill: #c92a2a;
     -fx-font-weight: bold;

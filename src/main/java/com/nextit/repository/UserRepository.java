@@ -11,5 +11,6 @@ public interface UserRepository {
     List<User> findAll();
     void save(User user);
     void update(User user);
+    void updatePassword(int userId, String passwordHash);
     void delete(int id);
 }

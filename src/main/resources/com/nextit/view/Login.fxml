@@ -41,6 +41,17 @@
         <Button text="Login" onAction="#handleLogin" maxWidth="Infinity" styleClass="primary-button"/>
         <Button text="Create an Account" onAction="#handleOpenOnboarding" maxWidth="Infinity" styleClass="secondary-button"/>
         <Label fx:id="errorLabel" styleClass="error-label"/>
+
+        <!-- Quick 1-Click Demo Login Chips -->
+        <VBox spacing="6" alignment="CENTER" style="-fx-padding: 6 0 0 0;">
+            <Label text="OR 1-CLICK DEMO ACCESS" style="-fx-font-size: 10px; -fx-font-weight: 800; -fx-text-fill: #9C92A2; -fx-letter-spacing: 0.8px;"/>
+            <HBox spacing="6" alignment="CENTER">
+                <Button text="🛡️ Admin" onAction="#quickLoginAdmin" styleClass="demo-pill-btn"/>
+                <Button text="🧑‍🏫 Instructor" onAction="#quickLoginInstructor" styleClass="demo-pill-btn"/>
+                <Button text="🧑‍🎓 Student" onAction="#quickLoginStudent" styleClass="demo-pill-btn"/>
+                <Button text="🏢 Employer" onAction="#quickLoginEmployer" styleClass="demo-pill-btn"/>
+            </HBox>
+        </VBox>
     </VBox>
     <Region/>
 </VBox>

@@ -103,6 +103,42 @@ public class LoginController {
 
     @FXML
     @SuppressWarnings("PMD.UnusedPrivateMethod")
+    private void quickLoginAdmin() {
+        usernameField.setText("admin1");
+        passwordField.setText("password123");
+        visiblePasswordField.setText("password123");
+        handleLogin();
+    }
+
+    @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
+    private void quickLoginInstructor() {
+        usernameField.setText("instructor1");
+        passwordField.setText("password123");
+        visiblePasswordField.setText("password123");
+        handleLogin();
+    }
+
+    @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
+    private void quickLoginStudent() {
+        usernameField.setText("student1");
+        passwordField.setText("password123");
+        visiblePasswordField.setText("password123");
+        handleLogin();
+    }
+
+    @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
+    private void quickLoginEmployer() {
+        usernameField.setText("employer1");
+        passwordField.setText("password123");
+        visiblePasswordField.setText("password123");
+        handleLogin();
+    }
+
+    @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void handleOpenOnboarding() {
         try {
             Stage stage = (Stage) errorLabel.getScene().getWindow();
