@@ -158,7 +158,8 @@ public class OnboardingView {
                             Student s = new Student();
                             s.setUserId(user.getUserId());
                             s.setStudentNumber(detail3 != null && !detail3.isBlank() ? detail3.trim() : "2026-" + String.format("%04d", user.getUserId()));
-                            s.setProgram("BS Information Technology");
+                            String prog = (detail1 != null && !detail1.isBlank()) ? detail1.trim() : "BS Information Technology";
+                            s.setProgram(prog);
                             int yr = 1;
                             try {
                                 if (detail2 != null && !detail2.isBlank()) {

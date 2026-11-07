@@ -65,7 +65,10 @@ public final class StudentViews {
 
         VBox heroRight = new VBox(6);
         heroRight.setAlignment(Pos.CENTER_RIGHT);
-        Label programHighlight = new Label(value(student.getProgram()));
+        String heroProg = (student.getProgram() != null && !student.getProgram().isBlank())
+                ? student.getProgram().trim()
+                : "Undeclared Program";
+        Label programHighlight = new Label(heroProg);
         programHighlight.getStyleClass().add("profile-hero-highlight-title");
         Label yearSectionHighlight = new Label("Year " + student.getYearLevel() + " • Section " + value(student.getSection()));
         yearSectionHighlight.getStyleClass().add("profile-hero-highlight-subtitle");
@@ -98,7 +101,10 @@ public final class StudentViews {
         academicGrid.getColumnConstraints().addAll(col1, col2);
 
         academicGrid.add(Ui.propertyTile("Student Number", value(student.getStudentNumber())), 0, 0);
-        academicGrid.add(Ui.propertyTile("Degree Program", value(student.getProgram())), 1, 0);
+        String degreeProg = (student.getProgram() != null && !student.getProgram().isBlank())
+                ? student.getProgram().trim()
+                : "Undeclared";
+        academicGrid.add(Ui.propertyTile("Degree Program", degreeProg), 1, 0);
         academicGrid.add(Ui.propertyTile("Year Level", "Year " + student.getYearLevel()), 0, 1);
         academicGrid.add(Ui.propertyTile("Class Section", "Section " + value(student.getSection())), 1, 1);
         academicGrid.add(Ui.propertyTile("Enrollment Status", Ui.badge(value(student.getEnrollmentStatus()), "badge-pill-mint")), 0, 2);
