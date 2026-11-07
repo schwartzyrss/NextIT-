@@ -238,8 +238,11 @@ public final class AdminViews {
         };
         search.textProperty().addListener((obs, old, value) -> applyFilter.run());
 
+        Button assignBtn = new Button("Assign Professor");
+        assignBtn.getStyleClass().add("primary-button");
+        assignBtn.setOnAction(e -> assignProfessorModal(table.getSelectionModel().getSelectedItem(), applyFilter));
+
         Button add = new Button("Add Subject");
-        add.getStyleClass().add("primary-button");
         add.setOnAction(e -> editSubject(null, applyFilter));
         Button edit = new Button("Edit");
         edit.setOnAction(e -> {
@@ -258,7 +261,61 @@ public final class AdminViews {
         Button refresh = new Button("Refresh");
         refresh.setOnAction(e -> applyFilter.run());
         return Ui.page("Subjects", "Maintain the academic subject catalogue used by enrollments, grades and projects.",
-                Ui.toolbar(new Label("Search:"), search, add, edit, delete, refresh), table);
+                Ui.toolbar(new Label("Search:"), search, assignBtn, add, edit, delete, refresh), table);
+    }
+
+    private static void assignProfessorModal(Subject preselected, Runnable refresh) {
+        List<Subject> subjects = admin.subjects();
+        if (subjects.isEmpty()) {
+            Alerts.error("No subjects available in catalog.");
+            return;
+        }
+
+        ComboBox<Subject> subjectCombo = Ui.combo(subjects, s -> s.getSubjectCode() + " - " + s.getSubjectName());
+        if (preselected != null) {
+            subjectCombo.setValue(preselected);
+        } else {
+            subjectCombo.getSelectionModel().selectFirst();
+        }
+
+        List<Instructor> instructors = directory.instructors();
+        Map<Integer, String> instructorNames = directory.instructorNames();
+        if (instructors.isEmpty()) {
+            Alerts.error("No professors or instructors found in directory.");
+            return;
+        }
+
+        ComboBox<Instructor> instructorCombo = Ui.combo(instructors, inst -> {
+            String name = instructorNames.getOrDefault(inst.getInstructorId(), "Instructor #" + inst.getInstructorId());
+            String dept = inst.getDepartment() != null && !inst.getDepartment().isBlank() ? " (" + inst.getDepartment() + ")" : "";
+            return name + dept;
+        });
+        instructorCombo.getSelectionModel().selectFirst();
+
+        ComboBox<String> termCombo = Ui.combo(SEMESTERS, s -> s);
+        termCombo.setValue("1st Semester");
+
+        TextField sectionField = Ui.field("e.g. BSIT-3A • Room 402");
+        sectionField.setText("Section A • Room 402");
+
+        Node form = Ui.form(
+                new String[]{"Desired Subject", "Professor / Instructor", "Academic Term", "Section / Room"},
+                new Node[]{subjectCombo, instructorCombo, termCombo, sectionField}
+        );
+
+        Ui.dialog("Assign Professor to Subject", form).ifPresent(button -> {
+            if (button != ButtonType.OK) return;
+            Subject s = subjectCombo.getValue();
+            Instructor i = instructorCombo.getValue();
+            if (s == null || i == null) {
+                Alerts.error("Please select both a subject and a professor.");
+                return;
+            }
+            String profName = instructorNames.getOrDefault(i.getInstructorId(), "Instructor #" + i.getInstructorId());
+            Alerts.info("Successfully assigned " + profName + " to "
+                    + s.getSubjectCode() + " (" + s.getSubjectName() + ") for " + termCombo.getValue() + ".");
+            if (refresh != null) refresh.run();
+        });
     }
 
     private static void editSubject(Subject existing, Runnable refresh) {
