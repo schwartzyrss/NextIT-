@@ -154,6 +154,14 @@
     -fx-effect: dropshadow(gaussian, rgba(56, 49, 57, 0.09), 18, 0.1, 2, 7);
 }
 
+.sidebar-category-header {
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #9c92a2;
+    -fx-padding: 14 14 4 14;
+    -fx-letter-spacing: 0.8px;
+}
+
 .sidebar .button,
 .sidebar .sidebar-button {
     -fx-background-color: transparent;
