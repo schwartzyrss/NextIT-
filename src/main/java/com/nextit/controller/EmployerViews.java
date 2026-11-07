@@ -6,11 +6,13 @@ import com.nextit.security.Session;
 import com.nextit.service.*;
 import com.nextit.util.Alerts;
 import com.nextit.util.Ui;
+import javafx.animation.PauseTransition;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.util.Duration;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -119,28 +121,62 @@ public final class EmployerViews {
             save.setDisable(hasError);
         };
 
-        // Clear error state immediately when user modifies input
+        // 300ms Debounce checks while typing
+        PauseTransition debounceContact = new PauseTransition(Duration.millis(300));
+        debounceContact.setOnFinished(ev -> {
+            String val = contactNumber.getText();
+            if (val != null && !val.isBlank() && profiles.isContactNumberTaken(employer.getEmployerId(), val)) {
+                contactNumberError.setText("⚠ This contact number is already registered to another company.");
+                contactNumberError.setVisible(true);
+                contactNumberError.setManaged(true);
+                if (!contactNumber.getStyleClass().contains("input-error-field")) {
+                    contactNumber.getStyleClass().add("input-error-field");
+                }
+            }
+            updateSaveButtonState.run();
+        });
+
+        PauseTransition debounceAddress = new PauseTransition(Duration.millis(300));
+        debounceAddress.setOnFinished(ev -> {
+            String val = address.getText();
+            if (val != null && !val.isBlank() && profiles.isAddressTaken(employer.getEmployerId(), val)) {
+                addressError.setText("⚠ This office address is already in use. Please specify a unique branch or suite number.");
+                addressError.setVisible(true);
+                addressError.setManaged(true);
+                if (!address.getStyleClass().contains("input-error-field")) {
+                    address.getStyleClass().add("input-error-field");
+                }
+            }
+            updateSaveButtonState.run();
+        });
+
+        // Clear error state immediately when user modifies input, and schedule debounce
         contactNumber.textProperty().addListener((obs, old, cur) -> {
+            debounceContact.stop();
             if (contactNumberError.isVisible()) {
                 contactNumberError.setVisible(false);
                 contactNumberError.setManaged(false);
                 contactNumber.getStyleClass().remove("input-error-field");
                 updateSaveButtonState.run();
             }
+            debounceContact.playFromStart();
         });
 
         address.textProperty().addListener((obs, old, cur) -> {
+            debounceAddress.stop();
             if (addressError.isVisible()) {
                 addressError.setVisible(false);
                 addressError.setManaged(false);
                 address.getStyleClass().remove("input-error-field");
                 updateSaveButtonState.run();
             }
+            debounceAddress.playFromStart();
         });
 
-        // On-blur duplicate check
+        // Immediate On-blur duplicate check
         contactNumber.focusedProperty().addListener((obs, old, isFocused) -> {
             if (!isFocused && contactNumber.getText() != null && !contactNumber.getText().isBlank()) {
+                debounceContact.stop();
                 if (profiles.isContactNumberTaken(employer.getEmployerId(), contactNumber.getText())) {
                     contactNumberError.setText("⚠ This contact number is already registered to another company.");
                     contactNumberError.setVisible(true);
@@ -148,13 +184,14 @@ public final class EmployerViews {
                     if (!contactNumber.getStyleClass().contains("input-error-field")) {
                         contactNumber.getStyleClass().add("input-error-field");
                     }
-                    updateSaveButtonState.run();
                 }
+                updateSaveButtonState.run();
             }
         });
 
         address.focusedProperty().addListener((obs, old, isFocused) -> {
             if (!isFocused && address.getText() != null && !address.getText().isBlank()) {
+                debounceAddress.stop();
                 if (profiles.isAddressTaken(employer.getEmployerId(), address.getText())) {
                     addressError.setText("⚠ This office address is already in use. Please specify a unique branch or suite number.");
                     addressError.setVisible(true);
@@ -162,8 +199,8 @@ public final class EmployerViews {
                     if (!address.getStyleClass().contains("input-error-field")) {
                         address.getStyleClass().add("input-error-field");
                     }
-                    updateSaveButtonState.run();
                 }
+                updateSaveButtonState.run();
             }
         });
 
@@ -201,13 +238,20 @@ public final class EmployerViews {
             }
 
             guard(() -> {
-                employer.setCompanyName(company.getText());
-                employer.setIndustry(industry.getText());
-                employer.setContactPerson(contactPerson.getText());
-                employer.setContactNumber(contactNumber.getText());
-                employer.setAddress(address.getText());
-                profiles.updateEmployer(employer);
-                Alerts.info("Company profile updated.");
+                save.setDisable(true);
+                save.setText("Saving Changes...");
+                try {
+                    employer.setCompanyName(company.getText());
+                    employer.setIndustry(industry.getText());
+                    employer.setContactPerson(contactPerson.getText());
+                    employer.setContactNumber(contactNumber.getText());
+                    employer.setAddress(address.getText());
+                    profiles.updateEmployer(employer);
+                    Alerts.info("Company profile updated.");
+                } finally {
+                    save.setText("Save Company Profile");
+                    updateSaveButtonState.run();
+                }
             });
         });
 
