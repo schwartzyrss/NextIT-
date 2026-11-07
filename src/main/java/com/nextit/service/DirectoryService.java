@@ -79,6 +79,13 @@ public class DirectoryService {
                 (a, b) -> a));
     }
 
+    public Map<Integer, TechnicalSkill> skillMap() {
+        return skillRepo.findAll().stream().collect(Collectors.toMap(
+                TechnicalSkill::getSkillId,
+                s -> s,
+                (a, b) -> a));
+    }
+
     public String studentName(int studentId) {
         return studentNames().getOrDefault(studentId, "Student #" + studentId);
     }

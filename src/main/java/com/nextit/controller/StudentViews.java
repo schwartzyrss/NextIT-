@@ -253,34 +253,46 @@ public final class StudentViews {
 
     public static Node skills() {
         int sid = studentId();
-        Map<Integer, String> skillNames = directory.skillNames();
+        Map<Integer, TechnicalSkill> skillMap = directory.skillMap();
         Map<Integer, String> instructors = directory.instructorNames();
-        TableView<StudentSkill> table = Ui.table();
-        Ui.addColumn(table, "Skill", s -> skillNames.getOrDefault(s.getSkillId(), "Skill #" + s.getSkillId()));
+        TableView<StudentSkill> table = Ui.table("No technical skills added yet.");
+        Ui.addColumn(table, "Technical Skill", s -> {
+            TechnicalSkill ts = skillMap.get(s.getSkillId());
+            return ts != null ? ts.getSkillName() : "Skill #" + s.getSkillId();
+        });
+        Ui.addColumn(table, "Category", s -> {
+            TechnicalSkill ts = skillMap.get(s.getSkillId());
+            return ts != null && ts.getCategory() != null ? ts.getCategory() : "General";
+        });
         Ui.addColumn(table, "Proficiency", StudentSkill::getProficiencyLevel);
-        Ui.addColumn(table, "Score", s -> s.getAssessmentScore() == null ? "" : String.format("%.2f%%", s.getAssessmentScore()));
-        Ui.addColumn(table, "Assessed By", s -> s.getAssessedBy() == null ? "" : instructors.getOrDefault(s.getAssessedBy(), "Instructor #" + s.getAssessedBy()));
-        Ui.addColumn(table, "Assessed At", s -> s.getAssessedAt() == null ? "" : s.getAssessedAt().toLocalDate().toString());
-        Ui.addColumn(table, "Remarks", StudentSkill::getRemarks);
+        Ui.addColumn(table, "Assessment Score", s -> s.getAssessmentScore() == null ? "Pending" : String.format("%.2f%%", s.getAssessmentScore()));
+        Ui.addColumn(table, "Assessed By", s -> s.getAssessedBy() == null ? "Self-Reported" : instructors.getOrDefault(s.getAssessedBy(), "Instructor #" + s.getAssessedBy()));
+        Ui.addColumn(table, "Assessment Date", s -> s.getAssessedAt() == null ? "--" : s.getAssessedAt().toLocalDate().toString());
+        Ui.addColumn(table, "Instructor Remarks", s -> s.getRemarks() == null || s.getRemarks().isBlank() ? "--" : s.getRemarks());
 
         List<StudentSkill> all = skillService.forStudent(sid);
         table.setItems(FXCollections.observableArrayList(all));
-        TextField search = Ui.field("Search by skill, proficiency or remarks...");
+        TextField search = Ui.field("Search by skill, category, proficiency or remarks...");
         Runnable filter = () -> {
-            skillNames.clear();
-            skillNames.putAll(directory.skillNames());
+            skillMap.clear();
+            skillMap.putAll(directory.skillMap());
             instructors.clear();
             instructors.putAll(directory.instructorNames());
             String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
-            table.setItems(FXCollections.observableArrayList(skillService.forStudent(sid).stream().filter(s ->
-                    String.valueOf(skillNames.getOrDefault(s.getSkillId(), "")).toLowerCase(Locale.ROOT).contains(q)
-                            || String.valueOf(s.getProficiencyLevel()).toLowerCase(Locale.ROOT).contains(q)
-                            || String.valueOf(s.getRemarks()).toLowerCase(Locale.ROOT).contains(q)).toList()));
+            table.setItems(FXCollections.observableArrayList(skillService.forStudent(sid).stream().filter(s -> {
+                TechnicalSkill ts = skillMap.get(s.getSkillId());
+                String skillName = ts != null ? ts.getSkillName() : "";
+                String category = ts != null && ts.getCategory() != null ? ts.getCategory() : "";
+                return skillName.toLowerCase(Locale.ROOT).contains(q)
+                        || category.toLowerCase(Locale.ROOT).contains(q)
+                        || String.valueOf(s.getProficiencyLevel()).toLowerCase(Locale.ROOT).contains(q)
+                        || String.valueOf(s.getRemarks()).toLowerCase(Locale.ROOT).contains(q);
+            }).toList()));
         };
         search.textProperty().addListener((obs, old, value) -> filter.run());
         Button refresh = new Button("Refresh");
         refresh.setOnAction(e -> filter.run());
-        return Ui.page("Technical Skills", "Skills assessed by your instructors, including proficiency and assessment scores.",
+        return Ui.page("Technical Skills", "Skills assessed by your instructors, including proficiency, competency categories, and assessment scores.",
                 Ui.toolbar(new Label("Search:"), search, refresh), table);
     }
 
