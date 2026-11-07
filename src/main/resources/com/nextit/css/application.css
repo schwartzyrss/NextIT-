@@ -672,6 +672,21 @@
     -fx-font-size: 13px;
 }
 
+.input-error-field {
+    -fx-border-color: #f87171 !important;
+    -fx-border-width: 1.5px !important;
+    -fx-border-radius: 14 !important;
+    -fx-background-color: #fff5f7 !important;
+    -fx-effect: dropshadow(gaussian, rgba(239, 68, 68, 0.22), 8, 0.1, 0, 2);
+}
+
+.field-error-message {
+    -fx-text-fill: #dc2626;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 3 0 0 2;
+}
+
 .empty-state {
     -fx-text-fill: #7d7581;
     -fx-font-style: italic;

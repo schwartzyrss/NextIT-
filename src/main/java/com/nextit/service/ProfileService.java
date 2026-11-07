@@ -57,6 +57,53 @@ public class ProfileService {
         Validator.maxLength(employer.getContactPerson(), 100, "Contact person");
         Validator.maxLength(employer.getContactNumber(), 30, "Contact number");
         Validator.maxLength(employer.getAddress(), 255, "Address");
+
+        // Enforce uniqueness for Contact Number across companies
+        if (employer.getContactNumber() != null && !employer.getContactNumber().isBlank()) {
+            String normPhone = employer.getContactNumber().replaceAll("[^0-9+]", "");
+            boolean duplicatePhone = employerRepo.findAll().stream()
+                    .anyMatch(other -> other.getEmployerId() != employer.getEmployerId()
+                            && other.getContactNumber() != null
+                            && !other.getContactNumber().isBlank()
+                            && other.getContactNumber().replaceAll("[^0-9+]", "").equalsIgnoreCase(normPhone));
+            if (duplicatePhone) {
+                throw new AppException("This contact number is already registered to another company.");
+            }
+        }
+
+        // Enforce uniqueness for Office Address across companies
+        if (employer.getAddress() != null && !employer.getAddress().isBlank()) {
+            String normAddr = employer.getAddress().trim().toLowerCase(java.util.Locale.ROOT);
+            boolean duplicateAddress = employerRepo.findAll().stream()
+                    .anyMatch(other -> other.getEmployerId() != employer.getEmployerId()
+                            && other.getAddress() != null
+                            && !other.getAddress().isBlank()
+                            && other.getAddress().trim().toLowerCase(java.util.Locale.ROOT).equals(normAddr));
+            if (duplicateAddress) {
+                throw new AppException("This office address is already in use. Please specify a unique branch or suite number.");
+            }
+        }
+
         employerRepo.update(employer);
+    }
+
+    public boolean isContactNumberTaken(int currentEmployerId, String contactNumber) {
+        if (contactNumber == null || contactNumber.isBlank()) return false;
+        String normPhone = contactNumber.replaceAll("[^0-9+]", "");
+        return employerRepo.findAll().stream()
+                .anyMatch(other -> other.getEmployerId() != currentEmployerId
+                        && other.getContactNumber() != null
+                        && !other.getContactNumber().isBlank()
+                        && other.getContactNumber().replaceAll("[^0-9+]", "").equalsIgnoreCase(normPhone));
+    }
+
+    public boolean isAddressTaken(int currentEmployerId, String address) {
+        if (address == null || address.isBlank()) return false;
+        String normAddr = address.trim().toLowerCase(java.util.Locale.ROOT);
+        return employerRepo.findAll().stream()
+                .anyMatch(other -> other.getEmployerId() != currentEmployerId
+                        && other.getAddress() != null
+                        && !other.getAddress().isBlank()
+                        && other.getAddress().trim().toLowerCase(java.util.Locale.ROOT).equals(normAddr));
     }
 }

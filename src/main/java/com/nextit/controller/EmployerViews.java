@@ -94,10 +94,78 @@ public final class EmployerViews {
         industry.setText(employer.getIndustry());
         TextField contactPerson = Ui.field("Contact person");
         contactPerson.setText(employer.getContactPerson());
+
         TextField contactNumber = Ui.field("Contact number");
         contactNumber.setText(employer.getContactNumber());
+        Label contactNumberError = new Label();
+        contactNumberError.getStyleClass().add("field-error-message");
+        contactNumberError.setVisible(false);
+        contactNumberError.setManaged(false);
+        VBox contactNumberBox = new VBox(3, contactNumber, contactNumberError);
+
         TextField address = Ui.field("Address");
         address.setText(employer.getAddress());
+        Label addressError = new Label();
+        addressError.getStyleClass().add("field-error-message");
+        addressError.setVisible(false);
+        addressError.setManaged(false);
+        VBox addressBox = new VBox(3, address, addressError);
+
+        Button save = new Button("Save Company Profile");
+        save.getStyleClass().add("primary-button");
+
+        Runnable updateSaveButtonState = () -> {
+            boolean hasError = contactNumberError.isVisible() || addressError.isVisible();
+            save.setDisable(hasError);
+        };
+
+        // Clear error state immediately when user modifies input
+        contactNumber.textProperty().addListener((obs, old, cur) -> {
+            if (contactNumberError.isVisible()) {
+                contactNumberError.setVisible(false);
+                contactNumberError.setManaged(false);
+                contactNumber.getStyleClass().remove("input-error-field");
+                updateSaveButtonState.run();
+            }
+        });
+
+        address.textProperty().addListener((obs, old, cur) -> {
+            if (addressError.isVisible()) {
+                addressError.setVisible(false);
+                addressError.setManaged(false);
+                address.getStyleClass().remove("input-error-field");
+                updateSaveButtonState.run();
+            }
+        });
+
+        // On-blur duplicate check
+        contactNumber.focusedProperty().addListener((obs, old, isFocused) -> {
+            if (!isFocused && contactNumber.getText() != null && !contactNumber.getText().isBlank()) {
+                if (profiles.isContactNumberTaken(employer.getEmployerId(), contactNumber.getText())) {
+                    contactNumberError.setText("⚠ This contact number is already registered to another company.");
+                    contactNumberError.setVisible(true);
+                    contactNumberError.setManaged(true);
+                    if (!contactNumber.getStyleClass().contains("input-error-field")) {
+                        contactNumber.getStyleClass().add("input-error-field");
+                    }
+                    updateSaveButtonState.run();
+                }
+            }
+        });
+
+        address.focusedProperty().addListener((obs, old, isFocused) -> {
+            if (!isFocused && address.getText() != null && !address.getText().isBlank()) {
+                if (profiles.isAddressTaken(employer.getEmployerId(), address.getText())) {
+                    addressError.setText("⚠ This office address is already in use. Please specify a unique branch or suite number.");
+                    addressError.setVisible(true);
+                    addressError.setManaged(true);
+                    if (!address.getStyleClass().contains("input-error-field")) {
+                        address.getStyleClass().add("input-error-field");
+                    }
+                    updateSaveButtonState.run();
+                }
+            }
+        });
 
         GridPane editGrid = new GridPane();
         editGrid.setHgap(16);
@@ -107,20 +175,41 @@ public final class EmployerViews {
         editGrid.add(Ui.propertyTile("Company Name", company), 0, 0);
         editGrid.add(Ui.propertyTile("Industry Sector", industry), 1, 0);
         editGrid.add(Ui.propertyTile("Contact Person", contactPerson), 0, 1);
-        editGrid.add(Ui.propertyTile("Contact Number", contactNumber), 1, 1);
-        editGrid.add(Ui.propertyTile("Office Address", address), 0, 2);
+        editGrid.add(Ui.propertyTile("Contact Number", contactNumberBox), 1, 1);
+        editGrid.add(Ui.propertyTile("Office Address", addressBox), 0, 2);
 
-        Button save = new Button("Save Company Profile");
-        save.getStyleClass().add("primary-button");
-        save.setOnAction(e -> guard(() -> {
-            employer.setCompanyName(company.getText());
-            employer.setIndustry(industry.getText());
-            employer.setContactPerson(contactPerson.getText());
-            employer.setContactNumber(contactNumber.getText());
-            employer.setAddress(address.getText());
-            profiles.updateEmployer(employer);
-            Alerts.info("Company profile updated.");
-        }));
+        save.setOnAction(e -> {
+            if (profiles.isContactNumberTaken(employer.getEmployerId(), contactNumber.getText())) {
+                contactNumberError.setText("⚠ This contact number is already registered to another company.");
+                contactNumberError.setVisible(true);
+                contactNumberError.setManaged(true);
+                if (!contactNumber.getStyleClass().contains("input-error-field")) {
+                    contactNumber.getStyleClass().add("input-error-field");
+                }
+                updateSaveButtonState.run();
+                return;
+            }
+            if (profiles.isAddressTaken(employer.getEmployerId(), address.getText())) {
+                addressError.setText("⚠ This office address is already in use. Please specify a unique branch or suite number.");
+                addressError.setVisible(true);
+                addressError.setManaged(true);
+                if (!address.getStyleClass().contains("input-error-field")) {
+                    address.getStyleClass().add("input-error-field");
+                }
+                updateSaveButtonState.run();
+                return;
+            }
+
+            guard(() -> {
+                employer.setCompanyName(company.getText());
+                employer.setIndustry(industry.getText());
+                employer.setContactPerson(contactPerson.getText());
+                employer.setContactNumber(contactNumber.getText());
+                employer.setAddress(address.getText());
+                profiles.updateEmployer(employer);
+                Alerts.info("Company profile updated.");
+            });
+        });
 
         VBox editTray = Ui.tray("Company Information", "Update company directory information visible to campus candidates", editGrid, save);
         HBox.setHgrow(editTray, Priority.ALWAYS);
