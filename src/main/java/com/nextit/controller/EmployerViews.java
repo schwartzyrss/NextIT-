@@ -288,21 +288,359 @@ public final class EmployerViews {
 
     public static Node dashboard() {
         int eid = employerId();
-        List<JobOpportunity> owned = career.opportunitiesForEmployer(eid);
-        List<Application> applications = career.applicationsForEmployer(eid);
-        long open = owned.stream().filter(o -> "Open".equalsIgnoreCase(o.getStatus())).count();
-        javafx.scene.layout.HBox cards = new javafx.scene.layout.HBox(12,
-                Ui.card("Posted Opportunities", String.valueOf(owned.size())),
-                Ui.card("Open Opportunities", String.valueOf(open)),
-                Ui.card("Applications", String.valueOf(applications.size())),
-                Ui.card("Shared Portfolios", String.valueOf(portfolios.portfoliosForEmployer(eid).size())));
-        return Ui.page("Employer Dashboard",
-                "Welcome, " + Session.currentUser().getFullName() + ". Manage your opportunities and review student applications.",
-                cards,
-                DashboardCharts.row(DashboardCharts.statusSummary("Application Status",
-                        DashboardCharts.countByStatus(
-                                applications.stream().map(Application::getStatus).toList(),
-                                List.of("Pending", "Reviewed", "Shortlisted", "Rejected", "Accepted")))));
+        Employer emp = profiles.employerForUser(Session.currentUser().getUserId()).orElse(null);
+        String compName = emp != null && emp.getCompanyName() != null ? emp.getCompanyName() : "Company";
+
+        VBox rootBox = new VBox(20);
+        rootBox.getStyleClass().add("page");
+        rootBox.setFillWidth(true);
+
+        // 1. Hero cushion with status and live badges
+        HBox hero = new HBox(16);
+        hero.getStyleClass().add("page-header-cushion");
+        hero.setAlignment(Pos.CENTER_LEFT);
+
+        VBox heroTitles = new VBox(4);
+        heroTitles.getChildren().addAll(
+                Ui.title("Employer Dashboard"),
+                Ui.subtitle("Welcome, " + Session.currentUser().getFullName() + ". Manage your opportunities and review student applications.")
+        );
+
+        Region heroSpacer = new Region();
+        HBox.setHgrow(heroSpacer, Priority.ALWAYS);
+
+        HBox statusPillBox = new HBox(8);
+        statusPillBox.setAlignment(Pos.CENTER_RIGHT);
+        Label statusDot = new Label("🟢");
+        Label statusText = new Label("Recruitment Active");
+        statusText.setStyle("-fx-font-weight: bold; -fx-text-fill: #2d6a4f; -fx-font-size: 12px;");
+        HBox liveChip = new HBox(6, statusDot, statusText);
+        liveChip.setAlignment(Pos.CENTER);
+        liveChip.getStyleClass().addAll("badge-pill", "badge-pill-mint");
+
+        Label compChip = Ui.badge(compName, "badge-pill-yellow");
+        statusPillBox.getChildren().addAll(liveChip, compChip);
+
+        hero.getChildren().addAll(heroTitles, heroSpacer, statusPillBox);
+
+        // 2. Full-Width 4-Column Stat Cards Row
+        HBox cardsRow = new HBox(14);
+        cardsRow.setFillHeight(true);
+
+        // 3. Main Dashboard Body: Left Work Area + Dedicated Right Side Panel
+        HBox dashboardBody = new HBox(20);
+        dashboardBody.setAlignment(Pos.TOP_LEFT);
+
+        VBox leftColumn = new VBox(20);
+        HBox.setHgrow(leftColumn, Priority.ALWAYS);
+
+        VBox rightColumnHolder = new VBox();
+
+        // Left Component A: Dual Charts Row
+        HBox chartsRow = new HBox(14);
+        chartsRow.setAlignment(Pos.TOP_LEFT);
+
+        // Left Component B: Candidate Applications Table Tray
+        VBox appTray = new VBox(14);
+        appTray.getStyleClass().add("clay-tray");
+        appTray.setFillWidth(true);
+
+        Map<Integer, String> studentNames = new java.util.HashMap<>();
+        Map<Integer, String> opportunityTitles = new java.util.HashMap<>();
+
+        TableView<Application> table = Ui.table("No applications matching filter.");
+        table.setPrefHeight(290);
+        table.setMinHeight(220);
+
+        Ui.addColumn(table, "Student Applicant", a -> studentNames.getOrDefault(a.getStudentId(), "Student #" + a.getStudentId()));
+        Ui.addColumn(table, "Position / Role", a -> opportunityTitles.getOrDefault(a.getOpportunityId(), "Opportunity #" + a.getOpportunityId()));
+        Ui.addColumn(table, "Applied Date", a -> a.getApplicationDate() == null ? "" : a.getApplicationDate().toLocalDate().toString());
+        table.getColumns().add(Ui.actionColumn("Status", a -> {
+            String st = a.getStatus() == null ? "Pending" : a.getStatus();
+            String pill = switch (st.toLowerCase(Locale.ROOT)) {
+                case "accepted" -> "badge-pill-mint";
+                case "shortlisted" -> "badge-pill-blue";
+                case "reviewed" -> "badge-pill-yellow";
+                case "rejected" -> "badge-pill-cream";
+                default -> "badge-pill-pink";
+            };
+            return Ui.badge(st, pill);
+        }));
+
+        TextField search = Ui.field("Filter by student or position...");
+        search.setPrefWidth(240);
+
+        ComboBox<String> statusFilter = new ComboBox<>(FXCollections.observableArrayList(
+                "All Statuses", "Pending", "Reviewed", "Shortlisted", "Accepted", "Rejected"));
+        statusFilter.setValue("All Statuses");
+
+        HBox trayHeader = new HBox(12);
+        trayHeader.setAlignment(Pos.CENTER_LEFT);
+
+        VBox trayTitles = new VBox(3);
+        Label trayTitle = new Label("Candidate Applications");
+        trayTitle.getStyleClass().add("tray-title");
+        Label traySub = new Label("Student applicants who applied to your open listings");
+        traySub.getStyleClass().add("tray-subtitle");
+        trayTitles.getChildren().addAll(trayTitle, traySub);
+
+        Region traySpacer = new Region();
+        HBox.setHgrow(traySpacer, Priority.ALWAYS);
+
+        trayHeader.getChildren().addAll(trayTitles, traySpacer, search, statusFilter);
+        appTray.getChildren().addAll(trayHeader, table);
+
+        leftColumn.getChildren().addAll(chartsRow, appTray);
+        dashboardBody.getChildren().addAll(leftColumn, rightColumnHolder);
+
+        // Self-refreshing dashboard state
+        final Runnable[] refreshHolder = new Runnable[1];
+        Runnable refreshDashboard = () -> {
+            List<JobOpportunity> owned = career.opportunitiesForEmployer(eid);
+            List<Application> apps = career.applicationsForEmployer(eid);
+            long open = owned.stream().filter(o -> "Open".equalsIgnoreCase(o.getStatus())).count();
+            int sharedPortfoliosCount = portfolios.portfoliosForEmployer(eid).size();
+
+            // Populate Map lookups
+            studentNames.clear();
+            studentNames.putAll(directory.studentNames());
+            opportunityTitles.clear();
+            owned.forEach(o -> opportunityTitles.put(o.getOpportunityId(), o.getTitle()));
+
+            // Update 4 Full-Width Stat Cards
+            cardsRow.getChildren().clear();
+            VBox c1 = Ui.card("Posted Opportunities", String.valueOf(owned.size()));
+            VBox c2 = Ui.card("Open Positions", String.valueOf(open));
+            VBox c3 = Ui.card("Candidate Applications", String.valueOf(apps.size()));
+            VBox c4 = Ui.card("Shared Portfolios", String.valueOf(sharedPortfoliosCount));
+
+            for (VBox c : List.of(c1, c2, c3, c4)) {
+                HBox.setHgrow(c, Priority.ALWAYS);
+                c.setMaxWidth(Double.MAX_VALUE);
+            }
+            cardsRow.getChildren().addAll(c1, c2, c3, c4);
+
+            // Update Dual Charts Row
+            chartsRow.getChildren().clear();
+            Map<String, Long> appStatusCounts = DashboardCharts.countByStatus(
+                    apps.stream().map(Application::getStatus).toList(),
+                    List.of("Pending", "Reviewed", "Shortlisted", "Accepted", "Rejected"));
+            Node appStatusChart = DashboardCharts.statusSummary("Application Status", appStatusCounts);
+
+            Map<String, Long> roleTypeCounts = DashboardCharts.countByStatus(
+                    owned.stream().map(JobOpportunity::getOpportunityType).toList(),
+                    List.of("Internship", "Employment"));
+            Node roleTypeChart = DashboardCharts.statusSummary("Role Types Offered", roleTypeCounts);
+
+            HBox.setHgrow(appStatusChart, Priority.ALWAYS);
+            HBox.setHgrow(roleTypeChart, Priority.ALWAYS);
+            chartsRow.getChildren().addAll(appStatusChart, roleTypeChart);
+
+            // Update Right Side Panel
+            rightColumnHolder.getChildren().clear();
+            VBox rightPanel = createEmployerRightSidePanel(eid, open, apps, owned, emp, studentNames, () -> refreshHolder[0].run());
+            rightColumnHolder.getChildren().add(rightPanel);
+
+            // Update Candidate Table
+            String q = search.getText() == null ? "" : search.getText().toLowerCase(Locale.ROOT);
+            String selectedStatus = statusFilter.getValue();
+            List<Application> filtered = apps.stream().filter(a -> {
+                String sName = studentNames.getOrDefault(a.getStudentId(), "").toLowerCase(Locale.ROOT);
+                String oTitle = opportunityTitles.getOrDefault(a.getOpportunityId(), "").toLowerCase(Locale.ROOT);
+                boolean matchesQ = q.isBlank() || sName.contains(q) || oTitle.contains(q);
+                boolean matchesStatus = selectedStatus == null || "All Statuses".equalsIgnoreCase(selectedStatus)
+                        || String.valueOf(a.getStatus()).equalsIgnoreCase(selectedStatus);
+                return matchesQ && matchesStatus;
+            }).toList();
+            table.setItems(FXCollections.observableArrayList(filtered));
+        };
+        refreshHolder[0] = refreshDashboard;
+
+        // Action Column: Review modal
+        table.getColumns().add(Ui.actionColumn("Action", a -> {
+            Button reviewBtn = new Button("Review");
+            reviewBtn.setStyle("-fx-font-size: 11px; -fx-padding: 3 10; -fx-background-radius: 12;");
+            reviewBtn.setOnAction(ev -> reviewApplicationModal(eid, a, studentNames, refreshDashboard));
+            return reviewBtn;
+        }));
+
+        search.textProperty().addListener((obs, old, val) -> refreshDashboard.run());
+        statusFilter.valueProperty().addListener((obs, old, val) -> refreshDashboard.run());
+
+        refreshDashboard.run();
+
+        rootBox.getChildren().addAll(hero, cardsRow, dashboardBody);
+        return rootBox;
+    }
+
+    private static VBox createEmployerRightSidePanel(int eid, long openPositions, List<Application> apps,
+                                                    List<JobOpportunity> owned, Employer emp,
+                                                    Map<Integer, String> studentNames, Runnable refresh) {
+        VBox rightSide = new VBox(16);
+        rightSide.setPrefWidth(360);
+        rightSide.setMinWidth(320);
+
+        // 1. Quick Actions Launcher
+        VBox quickActions = new VBox(12);
+        quickActions.getStyleClass().add("clay-tray");
+
+        Label actTitle = new Label("Quick Actions");
+        actTitle.getStyleClass().add("tray-title");
+        Label actSub = new Label("Recruitment shortcuts");
+        actSub.getStyleClass().add("tray-subtitle");
+
+        Button addOppBtn = new Button("💼  Post New Opportunity");
+        addOppBtn.setMaxWidth(Double.MAX_VALUE);
+        addOppBtn.getStyleClass().add("primary-button");
+        addOppBtn.setOnAction(e -> editOpportunity(eid, null, refresh));
+
+        Button refreshBtn = new Button("🔄  Refresh Pipeline Data");
+        refreshBtn.setMaxWidth(Double.MAX_VALUE);
+        refreshBtn.getStyleClass().add("secondary-button");
+        refreshBtn.setOnAction(e -> {
+            refresh.run();
+            Alerts.info("Recruitment pipeline refreshed.");
+        });
+
+        quickActions.getChildren().addAll(new VBox(3, actTitle, actSub), addOppBtn, refreshBtn);
+
+        // 2. Hiring Pipeline & Company Overview
+        VBox pipelineCard = new VBox(14);
+        pipelineCard.getStyleClass().add("clay-tray");
+
+        Label pipeTitle = new Label("Recruitment Pipeline");
+        pipeTitle.getStyleClass().add("tray-title");
+        Label pipeSub = new Label("Active hiring health & volume");
+        pipeSub.getStyleClass().add("tray-subtitle");
+
+        VBox queueBox = new VBox(8);
+        Label queueHeader = new Label("PIPELINE HEALTH");
+        queueHeader.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #8e8394; -fx-letter-spacing: 0.5px;");
+
+        long pendingReviewCount = apps.stream().filter(a -> "Pending".equalsIgnoreCase(a.getStatus())).count();
+
+        HBox pendingRow = new HBox(8);
+        pendingRow.setAlignment(Pos.CENTER_LEFT);
+        Label pLabel = new Label("Applications Pending:");
+        pLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+        Region pSp = new Region();
+        HBox.setHgrow(pSp, Priority.ALWAYS);
+        Node pBadge = pendingReviewCount > 0
+                ? Ui.badge(pendingReviewCount + " Need Review", "badge-pill-pink")
+                : Ui.badge("All Reviewed (0)", "badge-pill-mint");
+        pendingRow.getChildren().addAll(pLabel, pSp, pBadge);
+
+        HBox openRow = new HBox(8);
+        openRow.setAlignment(Pos.CENTER_LEFT);
+        Label oLabel = new Label("Open Positions:");
+        oLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+        Region oSp = new Region();
+        HBox.setHgrow(oSp, Priority.ALWAYS);
+        Node oBadge = Ui.badge(openPositions + " Active", "badge-pill-blue");
+        openRow.getChildren().addAll(oLabel, oSp, oBadge);
+
+        HBox totalRow = new HBox(8);
+        totalRow.setAlignment(Pos.CENTER_LEFT);
+        Label tLabel = new Label("Total Applicant Pool:");
+        tLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+        Region tSp = new Region();
+        HBox.setHgrow(tSp, Priority.ALWAYS);
+        Node tBadge = Ui.badge(apps.size() + " Candidates", "badge-pill-lavender");
+        totalRow.getChildren().addAll(tLabel, tSp, tBadge);
+
+        queueBox.getChildren().addAll(queueHeader, pendingRow, openRow, totalRow);
+
+        Separator sep = new Separator();
+
+        // Company info
+        VBox compBox = new VBox(6);
+        Label compHeader = new Label("COMPANY PROFILE");
+        compHeader.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #8e8394; -fx-letter-spacing: 0.5px;");
+        Label cName = new Label(emp != null && emp.getCompanyName() != null ? emp.getCompanyName() : "NextIT Partner");
+        cName.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+        Label cInd = new Label(emp != null && emp.getIndustry() != null ? emp.getIndustry() : "Technology");
+        cInd.setStyle("-fx-font-size: 11px; -fx-text-fill: #8e8394;");
+        compBox.getChildren().addAll(compHeader, cName, cInd);
+
+        pipelineCard.getChildren().addAll(new VBox(3, pipeTitle, pipeSub), queueBox, sep, compBox);
+
+        // 3. Latest Candidates Stream
+        VBox candidateCard = new VBox(12);
+        candidateCard.getStyleClass().add("clay-tray");
+        Label cTitle = new Label("Latest Applicants");
+        cTitle.getStyleClass().add("tray-title");
+        Label cSub = new Label("Most recent submissions");
+        cSub.getStyleClass().add("tray-subtitle");
+        candidateCard.getChildren().add(new VBox(3, cTitle, cSub));
+
+        List<Application> recentApps = apps.stream()
+                .sorted((a, b) -> Integer.compare(b.getApplicationId(), a.getApplicationId()))
+                .limit(3)
+                .toList();
+
+        if (recentApps.isEmpty()) {
+            Label empty = new Label("No candidate submissions yet.");
+            empty.setStyle("-fx-font-size: 11px; -fx-text-fill: #8e8394;");
+            candidateCard.getChildren().add(empty);
+        } else {
+            for (Application a : recentApps) {
+                HBox item = new HBox(10);
+                item.setAlignment(Pos.CENTER_LEFT);
+                item.getStyleClass().add("activity-item");
+
+                String stName = studentNames.getOrDefault(a.getStudentId(), "Student #" + a.getStudentId());
+                StackPane avatar = Ui.avatar(Ui.initials(stName), "avatar-yellow");
+                avatar.setPrefSize(32, 32);
+                avatar.setMinSize(32, 32);
+
+                VBox info = new VBox(2);
+                Label name = new Label(stName);
+                name.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #383139;");
+                String oppTitle = owned.stream()
+                        .filter(o -> o.getOpportunityId() == a.getOpportunityId())
+                        .map(JobOpportunity::getTitle)
+                        .findFirst()
+                        .orElse("Opportunity #" + a.getOpportunityId());
+                Label role = new Label(oppTitle);
+                role.setStyle("-fx-font-size: 10px; -fx-text-fill: #8e8394;");
+                info.getChildren().addAll(name, role);
+                HBox.setHgrow(info, Priority.ALWAYS);
+
+                String status = a.getStatus() == null ? "Pending" : a.getStatus();
+                String pill = switch (status.toLowerCase(Locale.ROOT)) {
+                    case "accepted" -> "badge-pill-mint";
+                    case "shortlisted" -> "badge-pill-blue";
+                    case "reviewed" -> "badge-pill-yellow";
+                    case "rejected" -> "badge-pill-cream";
+                    default -> "badge-pill-pink";
+                };
+                Label statusBadge = Ui.badge(status, pill);
+                item.getChildren().addAll(avatar, info, statusBadge);
+                candidateCard.getChildren().add(item);
+            }
+        }
+
+        rightSide.getChildren().addAll(quickActions, pipelineCard, candidateCard);
+        return rightSide;
+    }
+
+    private static void reviewApplicationModal(int eid, Application selected, Map<Integer, String> studentNames, Runnable refresh) {
+        if (selected == null) return;
+        ComboBox<String> status = Ui.combo(List.of("Pending", "Reviewed", "Shortlisted", "Rejected", "Accepted"), s -> s);
+        status.getSelectionModel().select(selected.getStatus() == null ? "Pending" : selected.getStatus());
+        TextArea remarks = Ui.area("Remarks");
+        remarks.setText(selected.getRemarks());
+        String name = studentNames.getOrDefault(selected.getStudentId(), "Student #" + selected.getStudentId());
+        Node form = Ui.form(new String[]{"Applicant", "Status", "Remarks"},
+                new Node[]{new Label(name), status, remarks});
+        Ui.dialog("Review Application", form).ifPresent(button -> {
+            if (button != ButtonType.OK) return;
+            guard(() -> {
+                career.updateApplicationStatus(eid, selected, status.getValue(), remarks.getText());
+                if (refresh != null) refresh.run();
+                Alerts.info("Application updated.");
+            });
+        });
     }
 
     public static Node opportunities() {

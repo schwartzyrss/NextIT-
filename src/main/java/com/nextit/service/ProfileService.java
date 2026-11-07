@@ -28,9 +28,58 @@ public class ProfileService {
                 .orElseThrow(() -> new AppException("User account not found."));
     }
 
-    public Optional<Student> studentForUser(int userId) { return studentRepo.findByUserId(userId); }
-    public Optional<Instructor> instructorForUser(int userId) { return instructorRepo.findByUserId(userId); }
-    public Optional<Employer> employerForUser(int userId) { return employerRepo.findByUserId(userId); }
+    public Optional<Student> studentForUser(int userId) {
+        Optional<Student> opt = studentRepo.findByUserId(userId);
+        if (opt.isPresent()) return opt;
+        User user = userRepo.findById(userId).orElse(null);
+        if (user != null && user.getRole() == com.nextit.model.Role.STUDENT) {
+            Student s = new Student();
+            s.setUserId(userId);
+            s.setStudentNumber("STU-" + String.format("%04d", userId));
+            s.setProgram("BS Information Technology");
+            s.setYearLevel(1);
+            s.setSection("A");
+            s.setEnrollmentStatus("Enrolled");
+            studentRepo.save(s);
+            return Optional.of(s);
+        }
+        return Optional.empty();
+    }
+
+    public Optional<Instructor> instructorForUser(int userId) {
+        Optional<Instructor> opt = instructorRepo.findByUserId(userId);
+        if (opt.isPresent()) return opt;
+        User user = userRepo.findById(userId).orElse(null);
+        if (user != null && user.getRole() == com.nextit.model.Role.INSTRUCTOR) {
+            Instructor inst = new Instructor();
+            inst.setUserId(userId);
+            inst.setEmployeeNumber("EMP-" + String.format("%04d", userId));
+            inst.setDepartment("Computer Science");
+            inst.setSpecialization("Software Engineering");
+            instructorRepo.save(inst);
+            return Optional.of(inst);
+        }
+        return Optional.empty();
+    }
+
+    public Optional<Employer> employerForUser(int userId) {
+        Optional<Employer> opt = employerRepo.findByUserId(userId);
+        if (opt.isPresent()) return opt;
+        User user = userRepo.findById(userId).orElse(null);
+        if (user != null && user.getRole() == com.nextit.model.Role.EMPLOYER) {
+            Employer emp = new Employer();
+            emp.setUserId(userId);
+            String name = (user.getFirstName() + " " + user.getLastName()).trim();
+            emp.setCompanyName(name.isBlank() ? user.getUsername() + " Company" : name + " Technologies");
+            emp.setIndustry("Information Technology");
+            emp.setContactPerson(name.isBlank() ? user.getUsername() : name);
+            emp.setContactNumber("+1-555-" + String.format("%04d", userId));
+            emp.setAddress("Technology Campus");
+            employerRepo.save(emp);
+            return Optional.of(emp);
+        }
+        return Optional.empty();
+    }
 
     public void updateStudent(Student student) {
         Validator.notBlank(student.getStudentNumber(), "Student number");

@@ -25,7 +25,7 @@ public class Main extends Application {
         Parent root = loader.load();
         LoginController controller = loader.getController();
         controller.setAuthenticationService(new AuthenticationService(new JdbcUserRepository()));
-        Scene scene = new Scene(root, 900, 560);
+        Scene scene = new Scene(root, 1080, 690);
         scene.getStylesheets().add(getClass().getResource("/com/nextit/css/application.css").toExternalForm());
         stage.setTitle("NextIT: Track Your Progress, Build Your Future");
         stage.setScene(scene);

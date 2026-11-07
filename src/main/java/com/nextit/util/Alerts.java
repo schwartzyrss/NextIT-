@@ -27,6 +27,15 @@ public final class Alerts {
         a.showAndWait();
     }
 
+    public static void warn(String message) {
+        Alert a = new Alert(Alert.AlertType.WARNING);
+        a.setTitle("NextIT");
+        a.setHeaderText(null);
+        a.setContentText(message);
+        style(a);
+        a.showAndWait();
+    }
+
     public static void info(String message) {
         Alert a = new Alert(Alert.AlertType.INFORMATION);
         a.setTitle("NextIT");

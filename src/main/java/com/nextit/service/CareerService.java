@@ -25,7 +25,17 @@ public class CareerService {
 
     public int employerIdForUser(int userId) {
         return employerRepo.findByUserId(userId).map(Employer::getEmployerId)
-            .orElseThrow(() -> new AppException("Employer profile not found."));
+            .orElseGet(() -> {
+                Employer emp = new Employer();
+                emp.setUserId(userId);
+                emp.setCompanyName("NextIT Partner");
+                emp.setIndustry("Information Technology");
+                emp.setContactPerson("Recruiting Team");
+                emp.setContactNumber("+1-555-" + String.format("%04d", userId));
+                emp.setAddress("Technology Campus");
+                employerRepo.save(emp);
+                return emp.getEmployerId();
+            });
     }
 
     public void addOpportunity(JobOpportunity o, int actingEmployerId) {

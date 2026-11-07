@@ -130,30 +130,295 @@ public final class StudentViews {
 
     public static Node dashboard() {
         int sid = studentId();
-        List<Grade> grades = academic.gradesForStudent(sid);
-        List<Attendance> attendance = academic.attendanceForStudent(sid);
-        Portfolio p = portfolio.portfolioForStudent(sid).orElse(null);
+        User currentUser = Session.currentUser();
+        Student student = profiles.studentForUser(currentUser.getUserId()).orElse(null);
 
-        HBox row1 = new HBox(12,
-                Ui.card("Subjects", String.valueOf(academic.enrollmentsForStudent(sid).size())),
-                Ui.card("Average Grade", String.format("%.2f%%", GradeCalculatorFacade.average(grades))),
-                Ui.card("Attendance Rate", String.format("%.2f%%", GradeCalculatorFacade.attendance(attendance))),
-                Ui.card("Technical Skills", String.valueOf(skillService.forStudent(sid).size())));
-        HBox row2 = new HBox(12,
-                Ui.card("Active Projects", String.valueOf(projects.projectsForStudent(sid).size())),
-                Ui.card("Achievements", String.valueOf(studentService.achievementsFor(sid).size())),
-                Ui.card("Certifications", String.valueOf(studentService.certificationsFor(sid).size())),
-                Ui.card("Portfolio", p == null || p.getVisibility() == null ? "Not created" : p.getVisibility()),
-                Ui.card("Open Opportunities", String.valueOf(career.openOpportunities().size())));
-        row1.getChildren().forEach(node -> HBox.setHgrow(node, Priority.ALWAYS));
-        row2.getChildren().forEach(node -> HBox.setHgrow(node, Priority.ALWAYS));
-        return Ui.page("Student Dashboard",
-                "Welcome back, " + Session.currentUser().getFullName() + ". Here is your academic and career progress at a glance.",
-                row1, row2,
-                DashboardCharts.row(
-                        DashboardCharts.gradeTrend(grades),
-                        DashboardCharts.attendanceSummary(attendance)),
-                Ui.subtitle("Use the sidebar to manage your academic records, skills, projects and portfolio."));
+        VBox rootBox = new VBox(20);
+        rootBox.getStyleClass().add("page");
+        rootBox.setFillWidth(true);
+
+        // 1. Hero cushion with status and live badges
+        HBox hero = new HBox(16);
+        hero.getStyleClass().add("page-header-cushion");
+        hero.setAlignment(Pos.CENTER_LEFT);
+
+        VBox heroTitles = new VBox(4);
+        heroTitles.getChildren().addAll(
+                Ui.title("Student Dashboard"),
+                Ui.subtitle("Welcome back, " + currentUser.getFullName() + ". Track your academic standing, technical milestones, and career progress.")
+        );
+
+        Region heroSpacer = new Region();
+        HBox.setHgrow(heroSpacer, Priority.ALWAYS);
+
+        HBox statusPillBox = new HBox(8);
+        statusPillBox.setAlignment(Pos.CENTER_RIGHT);
+        Label statusDot = new Label("🟢");
+        Label statusText = new Label("Active Student");
+        statusText.setStyle("-fx-font-weight: bold; -fx-text-fill: #2d6a4f; -fx-font-size: 12px;");
+        HBox liveChip = new HBox(6, statusDot, statusText);
+        liveChip.setAlignment(Pos.CENTER);
+        liveChip.getStyleClass().addAll("badge-pill", "badge-pill-mint");
+
+        String progTag = student != null && student.getProgram() != null ? student.getProgram() : "BS Information Technology";
+        Label progChip = Ui.badge(progTag, "badge-pill-lavender");
+        statusPillBox.getChildren().addAll(liveChip, progChip);
+
+        hero.getChildren().addAll(heroTitles, heroSpacer, statusPillBox);
+
+        // 2. Full-Width 4-Column Stat Cards (Row 1 & Row 2)
+        HBox cards1 = new HBox(14);
+        HBox cards2 = new HBox(14);
+        cards1.setFillHeight(true);
+        cards2.setFillHeight(true);
+
+        // 3. Main Dashboard Body: Left Work Area + Dedicated Right Side Panel
+        HBox dashboardBody = new HBox(20);
+        dashboardBody.setAlignment(Pos.TOP_LEFT);
+
+        VBox leftColumn = new VBox(20);
+        HBox.setHgrow(leftColumn, Priority.ALWAYS);
+
+        VBox rightColumnHolder = new VBox();
+
+        // Left Component A: Dual Charts Row
+        HBox chartsRow = new HBox(14);
+        chartsRow.setAlignment(Pos.TOP_LEFT);
+
+        // Left Component B: Recent Grades Tray
+        VBox gradesTray = new VBox(14);
+        gradesTray.getStyleClass().add("clay-tray");
+        gradesTray.setFillWidth(true);
+
+        Map<Integer, String> subjects = directory.subjectNames();
+        Map<Integer, Enrollment> enrollmentMap = new java.util.HashMap<>();
+        for (Enrollment e : academic.enrollmentsForStudent(sid)) {
+            enrollmentMap.put(e.getEnrollmentId(), e);
+        }
+
+        TableView<Grade> gradeTable = Ui.table("No grades recorded yet.");
+        gradeTable.setPrefHeight(290);
+        gradeTable.setMinHeight(220);
+
+        Ui.addColumn(gradeTable, "Subject", g -> {
+            Enrollment e = enrollmentMap.get(g.getEnrollmentId());
+            if (e != null) {
+                return subjects.getOrDefault(e.getSubjectId(), "Subject #" + e.getSubjectId());
+            }
+            return "Enrollment #" + g.getEnrollmentId();
+        });
+        Ui.addColumn(gradeTable, "Activity", Grade::getActivityName);
+        gradeTable.getColumns().add(Ui.actionColumn("Type", g -> {
+            String t = g.getActivityType() == null ? "Activity" : g.getActivityType();
+            String pill = switch (t.toLowerCase(Locale.ROOT)) {
+                case "examination" -> "badge-pill-pink";
+                case "laboratory" -> "badge-pill-blue";
+                case "quiz" -> "badge-pill-yellow";
+                case "project" -> "badge-pill-mint";
+                default -> "badge-pill-lavender";
+            };
+            return Ui.badge(t, pill);
+        }));
+        Ui.addColumn(gradeTable, "Score", g -> g.getScore() + " / " + g.getMaxScore());
+        gradeTable.getColumns().add(Ui.actionColumn("Grade", g -> {
+            String grText = g.getGrade() == null ? "" : String.format("%.1f%%", g.getGrade());
+            return Ui.badge(grText, "badge-pill-cream");
+        }));
+        Ui.addColumn(gradeTable, "Remarks", Grade::getRemarks);
+
+        TextField searchGrades = Ui.field("Filter by subject or activity...");
+        searchGrades.setPrefWidth(220);
+
+        HBox trayHeader = new HBox(12);
+        trayHeader.setAlignment(Pos.CENTER_LEFT);
+
+        VBox trayTitles = new VBox(3);
+        Label trayTitle = new Label("Academic Evaluations & Grades");
+        trayTitle.getStyleClass().add("tray-title");
+        Label traySub = new Label("Official marks and feedback from course instructors");
+        traySub.getStyleClass().add("tray-subtitle");
+        trayTitles.getChildren().addAll(trayTitle, traySub);
+
+        Region traySpacer = new Region();
+        HBox.setHgrow(traySpacer, Priority.ALWAYS);
+
+        Button exportCsvBtn = Ui.button("📥 Export CSV", "clay-btn-secondary");
+        exportCsvBtn.setOnAction(e -> com.nextit.util.ExportService.exportTableViewToCsv(gradeTable, "student_grades.csv", "Academic Evaluations & Grades", exportCsvBtn.getScene().getWindow()));
+
+        Button exportReportBtn = Ui.button("📄 Print / PDF", "clay-btn-secondary");
+        exportReportBtn.setOnAction(e -> com.nextit.util.ExportService.exportTableViewToHtmlReport(gradeTable, "student_grades_report.html", "Academic Evaluations & Grades", exportReportBtn.getScene().getWindow()));
+
+        trayHeader.getChildren().addAll(trayTitles, traySpacer, searchGrades, exportCsvBtn, exportReportBtn);
+        gradesTray.getChildren().addAll(trayHeader, gradeTable);
+
+        leftColumn.getChildren().addAll(chartsRow, gradesTray);
+        dashboardBody.getChildren().addAll(leftColumn, rightColumnHolder);
+
+        // Self-refreshing dashboard logic
+        final Runnable[] refreshHolder = new Runnable[1];
+        Runnable refreshDashboard = () -> {
+            List<Grade> grades = academic.gradesForStudent(sid);
+            List<Attendance> attendance = academic.attendanceForStudent(sid);
+            Portfolio p = portfolio.portfolioForStudent(sid).orElse(null);
+            List<Enrollment> enrollments = academic.enrollmentsForStudent(sid);
+
+            subjects.clear();
+            subjects.putAll(directory.subjectNames());
+            enrollmentMap.clear();
+            for (Enrollment e : enrollments) {
+                enrollmentMap.put(e.getEnrollmentId(), e);
+            }
+
+            // 1. Update 8 Full-Width Stat Cards
+            cards1.getChildren().clear();
+            cards2.getChildren().clear();
+
+            VBox c1 = Ui.card("Enrolled Subjects", String.valueOf(enrollments.size()));
+            VBox c2 = Ui.card("Average Grade", String.format("%.1f%%", GradeCalculatorFacade.average(grades)));
+            VBox c3 = Ui.card("Attendance Rate", String.format("%.1f%%", GradeCalculatorFacade.attendance(attendance)));
+            VBox c4 = Ui.card("Technical Skills", String.valueOf(skillService.forStudent(sid).size()));
+
+            VBox c5 = Ui.card("Active Projects", String.valueOf(projects.projectsForStudent(sid).size()));
+            VBox c6 = Ui.card("Achievements", String.valueOf(studentService.achievementsFor(sid).size()));
+            VBox c7 = Ui.card("Certifications", String.valueOf(studentService.certificationsFor(sid).size()));
+            VBox c8 = Ui.card("Open Opportunities", String.valueOf(career.openOpportunities().size()));
+
+            for (VBox c : List.of(c1, c2, c3, c4, c5, c6, c7, c8)) {
+                HBox.setHgrow(c, Priority.ALWAYS);
+                c.setMaxWidth(Double.MAX_VALUE);
+            }
+
+            cards1.getChildren().addAll(c1, c2, c3, c4);
+            cards2.getChildren().addAll(c5, c6, c7, c8);
+
+            // 2. Update Dual Charts
+            chartsRow.getChildren().clear();
+            Node gradeChart = DashboardCharts.gradeTrend(grades);
+            Node attendanceChart = DashboardCharts.attendanceSummary(attendance);
+            HBox.setHgrow(gradeChart, Priority.ALWAYS);
+            HBox.setHgrow(attendanceChart, Priority.ALWAYS);
+            chartsRow.getChildren().addAll(gradeChart, attendanceChart);
+
+            // 3. Update Right Side Panel
+            rightColumnHolder.getChildren().clear();
+            VBox rightPanel = createStudentRightSidePanel(student, p, sid, () -> refreshHolder[0].run());
+            rightColumnHolder.getChildren().add(rightPanel);
+
+            // 4. Update Grades Table
+            String q = searchGrades.getText() == null ? "" : searchGrades.getText().toLowerCase(Locale.ROOT);
+            List<Grade> filtered = grades.stream().filter(g -> {
+                Enrollment e = enrollmentMap.get(g.getEnrollmentId());
+                String subName = e != null ? subjects.getOrDefault(e.getSubjectId(), "").toLowerCase(Locale.ROOT) : "";
+                String actName = String.valueOf(g.getActivityName()).toLowerCase(Locale.ROOT);
+                return q.isBlank() || subName.contains(q) || actName.contains(q);
+            }).toList();
+            gradeTable.setItems(FXCollections.observableArrayList(filtered));
+        };
+
+        refreshHolder[0] = refreshDashboard;
+        searchGrades.textProperty().addListener((obs, old, val) -> refreshDashboard.run());
+        refreshDashboard.run();
+
+        rootBox.getChildren().addAll(hero, cards1, cards2, dashboardBody);
+        return rootBox;
+    }
+
+    private static VBox createStudentRightSidePanel(Student student, Portfolio portfolio, int studentId, Runnable refresh) {
+        VBox panel = new VBox(16);
+        panel.setPrefWidth(320);
+        panel.setMinWidth(280);
+        panel.setMaxWidth(360);
+
+        // Card 1: Academic Standing Pill Box
+        VBox standingTray = new VBox(12);
+        standingTray.getStyleClass().add("clay-tray");
+        standingTray.setStyle("-fx-padding: 16;");
+
+        Label standingTitle = new Label("Academic Standing");
+        standingTitle.getStyleClass().add("tray-title");
+        Label standingSub = new Label("Program placement & progress");
+        standingSub.getStyleClass().add("tray-subtitle");
+
+        VBox standingItems = new VBox(8);
+        String sNum = student != null && student.getStudentNumber() != null ? student.getStudentNumber() : "N/A";
+        String sYear = student != null ? "Year " + student.getYearLevel() + " • Section " + (student.getSection() != null ? student.getSection() : "A") : "Year 1";
+        String sStatus = student != null && student.getEnrollmentStatus() != null ? student.getEnrollmentStatus() : "Enrolled";
+
+        standingItems.getChildren().addAll(
+                Ui.propertyTile("Student Number", sNum),
+                Ui.propertyTile("Level & Section", sYear),
+                Ui.propertyTile("Enrollment Status", Ui.badge(sStatus, "badge-pill-mint"))
+        );
+
+        standingTray.getChildren().addAll(standingTitle, standingSub, standingItems);
+
+        // Card 2: Quick Student Shortcuts
+        VBox actionsTray = new VBox(12);
+        actionsTray.getStyleClass().add("clay-tray");
+        actionsTray.setStyle("-fx-padding: 16;");
+
+        Label actionsTitle = new Label("Student Hub");
+        actionsTitle.getStyleClass().add("tray-title");
+        Label actionsSub = new Label("Quick actions & career portfolio");
+        actionsSub.getStyleClass().add("tray-subtitle");
+
+        Button myProfileBtn = new Button("👤  View Profile");
+        myProfileBtn.setMaxWidth(Double.MAX_VALUE);
+        myProfileBtn.getStyleClass().add("primary-button");
+        myProfileBtn.setOnAction(e -> {
+            if (AppController.getInstance() != null) {
+                AppController.getInstance().navigateTo(StudentViews.profile(), "Profile");
+            }
+        });
+
+        Button addProjectBtn = new Button("🚀  Showcase Project");
+        addProjectBtn.setMaxWidth(Double.MAX_VALUE);
+        addProjectBtn.getStyleClass().add("secondary-button");
+        addProjectBtn.setOnAction(e -> {
+            editProject(studentId, null, refresh);
+        });
+
+        Button portfolioBtn = new Button("📁  Career Portfolio");
+        portfolioBtn.setMaxWidth(Double.MAX_VALUE);
+        portfolioBtn.getStyleClass().add("secondary-button");
+        portfolioBtn.setOnAction(e -> {
+            if (AppController.getInstance() != null) {
+                AppController.getInstance().navigateTo(StudentViews.portfolio(), "Portfolio");
+            }
+        });
+
+        Button refreshBtn = new Button("🔄  Refresh Dashboard");
+        refreshBtn.setMaxWidth(Double.MAX_VALUE);
+        refreshBtn.getStyleClass().add("secondary-button");
+        refreshBtn.setOnAction(e -> {
+            refresh.run();
+            Alerts.info("Dashboard refreshed.");
+        });
+
+        actionsTray.getChildren().addAll(actionsTitle, actionsSub, myProfileBtn, addProjectBtn, portfolioBtn, refreshBtn);
+
+        // Card 3: Portfolio & Career Status
+        VBox careerTray = new VBox(12);
+        careerTray.getStyleClass().add("clay-tray");
+        careerTray.setStyle("-fx-padding: 16;");
+
+        Label careerTitle = new Label("Career Readiness");
+        careerTitle.getStyleClass().add("tray-title");
+
+        String pStatus = portfolio != null && portfolio.getVisibility() != null ? portfolio.getVisibility() : "Not created";
+        String pBadgeStyle = "Approved".equalsIgnoreCase(pStatus) ? "badge-pill-mint" : "badge-pill-yellow";
+
+        VBox careerItems = new VBox(8);
+        careerItems.getChildren().addAll(
+                Ui.propertyTile("Portfolio Status", Ui.badge(pStatus, pBadgeStyle)),
+                Ui.propertyTile("Achievements Logged", String.valueOf(studentService.achievementsFor(studentId).size())),
+                Ui.propertyTile("Certifications Verified", String.valueOf(studentService.certificationsFor(studentId).size()))
+        );
+
+        careerTray.getChildren().addAll(careerTitle, careerItems);
+
+        panel.getChildren().addAll(standingTray, actionsTray, careerTray);
+        return panel;
     }
 
     /** Small facade so the dashboard does not need to import calculation details. */
@@ -246,6 +511,28 @@ public final class StudentViews {
     }
 
     private static Tab tab(String title, Node content) {
+        if (content instanceof TableView<?> table) {
+            Button exportCsv = Ui.button("📥 Export CSV", "clay-btn-secondary");
+            exportCsv.setOnAction(e -> com.nextit.util.ExportService.exportTableViewToCsv(table, title.toLowerCase(Locale.ROOT).replace(" ", "_") + ".csv", title, exportCsv.getScene().getWindow()));
+
+            Button exportReport = Ui.button("📄 Print / PDF", "clay-btn-secondary");
+            exportReport.setOnAction(e -> com.nextit.util.ExportService.exportTableViewToHtmlReport(table, title.toLowerCase(Locale.ROOT).replace(" ", "_") + ".html", title, exportReport.getScene().getWindow()));
+
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            HBox toolbar = new HBox(8, spacer, exportCsv, exportReport);
+            toolbar.setAlignment(Pos.CENTER_RIGHT);
+            toolbar.setStyle("-fx-padding: 0 0 10 0;");
+
+            VBox box = new VBox(8, toolbar, table);
+            VBox.setVgrow(table, Priority.ALWAYS);
+            box.setStyle("-fx-padding: 12 0 0 0;");
+
+            Tab tab = new Tab(title, box);
+            tab.setClosable(false);
+            return tab;
+        }
         Tab tab = new Tab(title, content);
         tab.setClosable(false);
         return tab;

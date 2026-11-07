@@ -31,7 +31,17 @@ public class AcademicService {
 
     public int studentIdForUser(int userId) {
         return studentRepo.findByUserId(userId).map(Student::getStudentId)
-            .orElseThrow(() -> new AppException("Student profile not found for this user."));
+            .orElseGet(() -> {
+                Student s = new Student();
+                s.setUserId(userId);
+                s.setStudentNumber("STU-" + String.format("%04d", userId));
+                s.setProgram("BS Information Technology");
+                s.setYearLevel(1);
+                s.setSection("A");
+                s.setEnrollmentStatus("Enrolled");
+                studentRepo.save(s);
+                return s.getStudentId();
+            });
     }
 
     public Enrollment enrollmentFor(int studentId, int subjectId) {

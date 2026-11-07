@@ -122,10 +122,25 @@
 /* --------------------------------------------------------------------------
    Sidebar Navigation
    -------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------
+   Sidebar & Fixed Sticky Footer
+   -------------------------------------------------------------------------- */
+.sidebar-container {
+    -fx-background-color:
+        linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.2) 40%, rgba(56, 49, 57, 0.06) 100%),
+        #fffdf7;
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 34;
+    -fx-padding: 16 10 14 10;
+    -fx-min-width: 215;
+    -fx-pref-width: 225;
+    -fx-effect: dropshadow(gaussian, rgba(56, 49, 57, 0.09), 18, 0.1, 2, 7);
+}
+
 .sidebar-scroll {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
-    -fx-padding: 16 8 16 16;
+    -fx-padding: 0 4 6 2;
     -fx-border-width: 0;
 }
 
@@ -135,7 +150,7 @@
 
 .sidebar-scroll .scroll-bar:vertical {
     -fx-background-color: transparent;
-    -fx-pref-width: 8;
+    -fx-pref-width: 6;
 }
 
 .sidebar-scroll .scroll-bar:vertical .thumb {
@@ -143,15 +158,10 @@
     -fx-background-radius: 999;
 }
 
-.sidebar {
-    -fx-background-color:
-        linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.2) 40%, rgba(56, 49, 57, 0.06) 100%),
-        #fffdf7;
-    -fx-background-insets: 0, 2;
-    -fx-background-radius: 34;
-    -fx-padding: 18 12;
-    -fx-min-width: 210;
-    -fx-effect: dropshadow(gaussian, rgba(56, 49, 57, 0.09), 18, 0.1, 2, 7);
+.sidebar,
+.sidebar-nav-list {
+    -fx-background-color: transparent;
+    -fx-padding: 0 2;
 }
 
 .sidebar-category-header {
@@ -162,8 +172,17 @@
     -fx-letter-spacing: 0.8px;
 }
 
+.sidebar-footer {
+    -fx-padding: 12 4 2 4;
+    -fx-border-color: rgba(56, 49, 57, 0.08);
+    -fx-border-width: 1 0 0 0;
+}
+
 .sidebar .button,
-.sidebar .sidebar-button {
+.sidebar .sidebar-button,
+.sidebar-container .button,
+.sidebar-container .sidebar-button,
+.sidebar-footer .sidebar-button {
     -fx-background-color: transparent;
     -fx-text-fill: #383139;
     -fx-font-size: 13px;
@@ -175,7 +194,10 @@
 }
 
 .sidebar .button:hover,
-.sidebar .sidebar-button:hover {
+.sidebar .sidebar-button:hover,
+.sidebar-container .button:hover,
+.sidebar-container .sidebar-button:hover,
+.sidebar-footer .sidebar-button:hover {
     -fx-background-color:
         linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.95) 0%, rgba(192, 239, 220, 0.25) 40%, rgba(120, 195, 165, 0.4) 100%),
         linear-gradient(from 15% 15% to 85% 85%, #d8f8ec 0%, #c0efdc 65%, #ace6cf 100%);
@@ -185,7 +207,8 @@
     -fx-effect: dropshadow(gaussian, rgba(192, 239, 220, 0.65), 10, 0.1, 1, 4);
 }
 
-.sidebar .sidebar-button-active {
+.sidebar .sidebar-button-active,
+.sidebar-container .sidebar-button-active {
     -fx-background-color:
         linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.95) 0%, rgba(246, 163, 202, 0.25) 40%, rgba(190, 95, 140, 0.45) 100%),
         linear-gradient(from 15% 15% to 85% 85%, #ffcbe1 0%, #f6a3ca 65%, #ea8cb8 100%);
@@ -196,7 +219,9 @@
     -fx-effect: dropshadow(gaussian, rgba(246, 163, 202, 0.65), 12, 0.1, 1, 5);
 }
 
-.sidebar .sidebar-logout-button {
+.sidebar .sidebar-logout-button,
+.sidebar-container .sidebar-logout-button,
+.sidebar-footer .sidebar-logout-button {
     -fx-background-color:
         linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.95) 0%, rgba(249, 231, 168, 0.25) 40%, rgba(200, 175, 90, 0.4) 100%),
         linear-gradient(from 15% 15% to 85% 85%, #fef4cd 0%, #f9e7a8 65%, #eed68a 100%);
@@ -207,7 +232,9 @@
     -fx-effect: dropshadow(gaussian, rgba(249, 231, 168, 0.55), 10, 0.1, 0, 3);
 }
 
-.sidebar .sidebar-logout-button:hover {
+.sidebar .sidebar-logout-button:hover,
+.sidebar-container .sidebar-logout-button:hover,
+.sidebar-footer .sidebar-logout-button:hover {
     -fx-background-color:
         linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 1.0) 0%, rgba(249, 231, 168, 0.35) 40%, rgba(200, 175, 90, 0.5) 100%),
         linear-gradient(from 15% 15% to 85% 85%, #fef8dc 0%, #faebb5 65%, #f2dc98 100%);
@@ -215,8 +242,160 @@
 }
 
 /* --------------------------------------------------------------------------
-   Login Screen
+   Login Screen — Modern Claymorphic Showcase Split Layout
    -------------------------------------------------------------------------- */
+.login-scroll-root {
+    -fx-background-color: #f1f2fa;
+    -fx-background: #f1f2fa;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+}
+
+.login-root {
+    -fx-background-color: #f1f2fa;
+}
+
+.login-showcase-container {
+    -fx-background-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(56, 49, 57, 0.16), 36, 0.18, 0, 14);
+}
+
+.login-hero-pane {
+    -fx-background-color:
+        linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.95) 0%, rgba(246, 163, 202, 0.3) 45%, rgba(190, 95, 140, 0.35) 100%),
+        linear-gradient(from 15% 15% to 85% 85%, #ffcbe1 0%, #f6a3ca 55%, #ea8cb8 100%);
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 32 0 0 32;
+    -fx-padding: 36 32;
+}
+
+.login-hero-title {
+    -fx-font-size: 32px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #383139;
+}
+
+.login-hero-subtitle {
+    -fx-font-size: 17px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #383139;
+    -fx-line-spacing: 2px;
+}
+
+.login-hero-desc {
+    -fx-font-size: 12.5px;
+    -fx-text-fill: #48404b;
+    -fx-line-spacing: 3px;
+}
+
+.login-feature-card {
+    -fx-background-color: rgba(255, 255, 255, 0.45);
+    -fx-background-radius: 18;
+    -fx-padding: 10 14;
+    -fx-border-color: rgba(255, 255, 255, 0.85);
+    -fx-border-radius: 18;
+    -fx-border-width: 1.2;
+}
+
+.login-feature-title {
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #383139;
+}
+
+.login-feature-desc {
+    -fx-font-size: 11px;
+    -fx-text-fill: #544b58;
+}
+
+.login-trust-chip {
+    -fx-background-color: rgba(255, 255, 255, 0.65);
+    -fx-background-radius: 999;
+    -fx-padding: 6 14;
+    -fx-border-color: rgba(255, 255, 255, 0.9);
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+}
+
+.login-trust-text {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #383139;
+}
+
+.login-form-pane {
+    -fx-background-color:
+        linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 40%, rgba(56, 49, 57, 0.06) 100%),
+        linear-gradient(from 15% 15% to 85% 85%, #ffffff 0%, #fffdf7 65%, #f7f1e4 100%);
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 0 32 32 0;
+    -fx-padding: 36 38;
+}
+
+.login-form-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #383139;
+}
+
+.login-form-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #7a727d;
+}
+
+.login-field-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #5e5463;
+    -fx-padding: 0 0 2 4;
+}
+
+.login-demo-grid {
+    -fx-padding: 4 0 0 0;
+}
+
+.demo-card-btn {
+    -fx-background-color:
+        linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.95) 0%, rgba(240, 244, 250, 0.3) 100%),
+        linear-gradient(from 15% 15% to 85% 85%, #ffffff 0%, #f6f7fb 100%);
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 16;
+    -fx-border-color: rgba(220, 226, 238, 0.85);
+    -fx-border-radius: 16;
+    -fx-border-width: 1.2;
+    -fx-padding: 7 12;
+    -fx-cursor: hand;
+    -fx-alignment: CENTER_LEFT;
+    -fx-effect: dropshadow(gaussian, rgba(160, 168, 195, 0.22), 8, 0.08, 0, 2);
+}
+
+.demo-card-btn:hover {
+    -fx-background-color:
+        linear-gradient(from 0% 0% to 100% 100%, #ffffff 0%, #fff0f6 100%),
+        linear-gradient(from 15% 15% to 85% 85%, #ffffff 0%, #ffeaf3 100%);
+    -fx-border-color: #f6a3ca;
+    -fx-effect: dropshadow(gaussian, rgba(246, 163, 202, 0.45), 12, 0.12, 0, 4);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+.demo-card-btn:pressed {
+    -fx-scale-x: 0.99;
+    -fx-scale-y: 0.99;
+    -fx-effect: dropshadow(gaussian, rgba(56, 49, 57, 0.1), 4, 0.05, 0, 1);
+}
+
+.demo-card-title {
+    -fx-font-size: 11.5px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #383139;
+}
+
+.demo-card-sub {
+    -fx-font-size: 10px;
+    -fx-text-fill: #7a727d;
+}
+
 .app-title {
     -fx-font-size: 40px;
     -fx-font-weight: bold;
@@ -284,11 +463,50 @@
    -------------------------------------------------------------------------- */
 .card {
     -fx-padding: 18 20;
-    -fx-min-width: 150;
-    -fx-pref-width: 190;
+    -fx-min-width: 140;
+    -fx-pref-width: 220;
+    -fx-max-width: 9999;
     -fx-background-insets: 0, 2;
     -fx-background-radius: 28, 26;
     -fx-effect: dropshadow(gaussian, rgba(56, 49, 57, 0.12), 16, 0.1, 2, 7);
+}
+
+/* Right side panel cards & shortcuts */
+.right-panel-card {
+    -fx-background-color:
+        linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.25) 35%, rgba(56, 49, 57, 0.05) 100%),
+        #fffdf7;
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 28;
+    -fx-padding: 20 22;
+    -fx-effect: dropshadow(gaussian, rgba(56, 49, 57, 0.09), 16, 0.1, 1, 6);
+}
+
+.right-panel-btn {
+    -fx-background-color: #ffffff;
+    -fx-border-color: rgba(56, 49, 57, 0.1);
+    -fx-border-radius: 14;
+    -fx-background-radius: 14;
+    -fx-padding: 8 14;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #383139;
+    -fx-alignment: CENTER_LEFT;
+    -fx-cursor: hand;
+}
+
+.right-panel-btn:hover {
+    -fx-background-color: #faf6fd;
+    -fx-border-color: #f6a3ca;
+    -fx-text-fill: #8e2b60;
+}
+
+.activity-item {
+    -fx-background-color: rgba(255, 255, 255, 0.7);
+    -fx-background-radius: 16;
+    -fx-padding: 10 14;
+    -fx-border-color: rgba(56, 49, 57, 0.05);
+    -fx-border-radius: 16;
 }
 
 .card-value {
