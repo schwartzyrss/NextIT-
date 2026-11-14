@@ -8,9 +8,11 @@ import com.nextit.util.Alerts;
 import com.nextit.util.Ui;
 import javafx.animation.PauseTransition;
 import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
 
@@ -291,10 +293,6 @@ public final class EmployerViews {
         Employer emp = profiles.employerForUser(Session.currentUser().getUserId()).orElse(null);
         String compName = emp != null && emp.getCompanyName() != null ? emp.getCompanyName() : "Company";
 
-        VBox rootBox = new VBox(20);
-        rootBox.getStyleClass().add("page");
-        rootBox.setFillWidth(true);
-
         // 1. Hero cushion with status and live badges
         HBox hero = new HBox(16);
         hero.getStyleClass().add("page-header-cushion");
@@ -311,10 +309,10 @@ public final class EmployerViews {
 
         HBox statusPillBox = new HBox(8);
         statusPillBox.setAlignment(Pos.CENTER_RIGHT);
-        Label statusDot = new Label("🟢");
+        StackPane statusDot = Ui.statusDot(true);
         Label statusText = new Label("Recruitment Active");
         statusText.setStyle("-fx-font-weight: bold; -fx-text-fill: #2d6a4f; -fx-font-size: 12px;");
-        HBox liveChip = new HBox(6, statusDot, statusText);
+        HBox liveChip = new HBox(8, statusDot, statusText);
         liveChip.setAlignment(Pos.CENTER);
         liveChip.getStyleClass().addAll("badge-pill", "badge-pill-mint");
 
@@ -323,24 +321,30 @@ public final class EmployerViews {
 
         hero.getChildren().addAll(heroTitles, heroSpacer, statusPillBox);
 
+        // Fixed sticky header container
+        VBox headerContainer = new VBox(hero);
+        headerContainer.setStyle("-fx-background-color: #f1f2fa;");
+        headerContainer.setPadding(new Insets(24, 24, 10, 24));
+
         // 2. Full-Width 4-Column Stat Cards Row
         HBox cardsRow = new HBox(14);
         cardsRow.setFillHeight(true);
 
-        // 3. Main Dashboard Body: Left Work Area + Dedicated Right Side Panel
-        HBox dashboardBody = new HBox(20);
-        dashboardBody.setAlignment(Pos.TOP_LEFT);
+        // 3. Middle Analytics & Sidebar Stack Row
+        HBox middleRow = new HBox(16);
+        middleRow.setAlignment(Pos.TOP_LEFT);
 
-        VBox leftColumn = new VBox(20);
-        HBox.setHgrow(leftColumn, Priority.ALWAYS);
-
-        VBox rightColumnHolder = new VBox();
-
-        // Left Component A: Dual Charts Row
         HBox chartsRow = new HBox(14);
         chartsRow.setAlignment(Pos.TOP_LEFT);
+        HBox.setHgrow(chartsRow, Priority.ALWAYS);
 
-        // Left Component B: Candidate Applications Table Tray
+        VBox rightColumnHolder = new VBox();
+        rightColumnHolder.setPrefWidth(360);
+        rightColumnHolder.setMinWidth(320);
+
+        middleRow.getChildren().addAll(chartsRow, rightColumnHolder);
+
+        // 4. Lower Candidate Applications Table Card
         VBox appTray = new VBox(14);
         appTray.getStyleClass().add("clay-tray");
         appTray.setFillWidth(true);
@@ -390,9 +394,6 @@ public final class EmployerViews {
         trayHeader.getChildren().addAll(trayTitles, traySpacer, search, statusFilter);
         appTray.getChildren().addAll(trayHeader, table);
 
-        leftColumn.getChildren().addAll(chartsRow, appTray);
-        dashboardBody.getChildren().addAll(leftColumn, rightColumnHolder);
-
         // Self-refreshing dashboard state
         final Runnable[] refreshHolder = new Runnable[1];
         Runnable refreshDashboard = () -> {
@@ -407,12 +408,12 @@ public final class EmployerViews {
             opportunityTitles.clear();
             owned.forEach(o -> opportunityTitles.put(o.getOpportunityId(), o.getTitle()));
 
-            // Update 4 Full-Width Stat Cards
+            // Update 4 Full-Width Stat Cards with Pastel Clay Accents
             cardsRow.getChildren().clear();
-            VBox c1 = Ui.card("Posted Opportunities", String.valueOf(owned.size()));
-            VBox c2 = Ui.card("Open Positions", String.valueOf(open));
-            VBox c3 = Ui.card("Candidate Applications", String.valueOf(apps.size()));
-            VBox c4 = Ui.card("Shared Portfolios", String.valueOf(sharedPortfoliosCount));
+            VBox c1 = Ui.card("Posted Opportunities", String.valueOf(owned.size()), "card-yellow");
+            VBox c2 = Ui.card("Open Positions", String.valueOf(open), "card-blue");
+            VBox c3 = Ui.card("Candidate Applications", String.valueOf(apps.size()), "card-cream");
+            VBox c4 = Ui.card("Shared Portfolios", String.valueOf(sharedPortfoliosCount), "card-mint");
 
             for (VBox c : List.of(c1, c2, c3, c4)) {
                 HBox.setHgrow(c, Priority.ALWAYS);
@@ -459,7 +460,8 @@ public final class EmployerViews {
         // Action Column: Review modal
         table.getColumns().add(Ui.actionColumn("Action", a -> {
             Button reviewBtn = new Button("Review");
-            reviewBtn.setStyle("-fx-font-size: 11px; -fx-padding: 3 10; -fx-background-radius: 12;");
+            reviewBtn.setStyle("-fx-font-size: 11px; -fx-padding: 4 14; -fx-background-radius: 999; -fx-font-weight: bold;");
+            reviewBtn.getStyleClass().add("badge-pill-lavender");
             reviewBtn.setOnAction(ev -> reviewApplicationModal(eid, a, studentNames, refreshDashboard));
             return reviewBtn;
         }));
@@ -469,8 +471,32 @@ public final class EmployerViews {
 
         refreshDashboard.run();
 
-        rootBox.getChildren().addAll(hero, cardsRow, dashboardBody);
-        return rootBox;
+        VBox scrollContent = new VBox(20);
+        scrollContent.setFillWidth(true);
+        scrollContent.setStyle("-fx-background-color: #f1f2fa;");
+        scrollContent.setPadding(new Insets(10, 24, 32, 24));
+        scrollContent.getChildren().addAll(cardsRow, middleRow, appTray);
+
+        ScrollPane scrollPane = new ScrollPane(scrollContent);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.getStyleClass().add("content-scroll");
+
+        // Forward mouse scroll events on the sticky header to the scrollPane
+        headerContainer.addEventHandler(ScrollEvent.SCROLL, event -> {
+            scrollPane.fireEvent(event.copyFor(scrollPane, scrollPane));
+            event.consume();
+        });
+
+        BorderPane dashboardRoot = new BorderPane();
+        dashboardRoot.getProperties().put("self-scrolling", Boolean.TRUE);
+        dashboardRoot.setStyle("-fx-background-color: #f1f2fa;");
+        dashboardRoot.setTop(headerContainer);
+        dashboardRoot.setCenter(scrollPane);
+
+        return dashboardRoot;
     }
 
     private static VBox createEmployerRightSidePanel(int eid, long openPositions, List<Application> apps,
@@ -489,13 +515,15 @@ public final class EmployerViews {
         Label actSub = new Label("Recruitment shortcuts");
         actSub.getStyleClass().add("tray-subtitle");
 
-        Button addOppBtn = new Button("💼  Post New Opportunity");
+        Button addOppBtn = new Button("Post New Opportunity");
         addOppBtn.setMaxWidth(Double.MAX_VALUE);
         addOppBtn.getStyleClass().add("primary-button");
         addOppBtn.setOnAction(e -> editOpportunity(eid, null, refresh));
 
-        Button refreshBtn = new Button("🔄  Refresh Pipeline Data");
+        Button refreshBtn = new Button("Refresh Pipeline Data");
         refreshBtn.setMaxWidth(Double.MAX_VALUE);
+        StackPane refIcon = Ui.refreshIcon();
+        refreshBtn.setGraphic(refIcon);
         refreshBtn.getStyleClass().add("secondary-button");
         refreshBtn.setOnAction(e -> {
             refresh.run();

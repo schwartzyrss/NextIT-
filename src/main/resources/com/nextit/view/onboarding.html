@@ -839,8 +839,11 @@
 
         <!-- Inset Trust Metrics Badge -->
         <div class="p-4 rounded-3xl bg-white/40 border border-white/50 flex items-center gap-3.5">
-          <div class="w-11 h-11 rounded-2xl bg-white/80 shadow-sm flex items-center justify-center text-lg">
-            🎓
+          <div class="w-11 h-11 rounded-2xl bg-white/80 shadow-sm flex items-center justify-center">
+            <svg class="w-6 h-6 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+              <path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5"/>
+            </svg>
           </div>
           <div>
             <div class="text-xs font-bold text-nextit-ink">Cryptographically Verified Proofs</div>
@@ -879,7 +882,14 @@
               class="clay-role-card flex flex-col justify-between"
             >
               <div class="flex items-start justify-between mb-3">
-                <span class="text-2xl">🌱</span>
+                <div class="w-8 h-8 flex items-center justify-center">
+                  <svg class="w-7 h-7 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 20h10"/>
+                    <path d="M10 20c5.5-2.5.8-6.4 3-13"/>
+                    <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/>
+                    <path d="M14.1 6a7 7 0 0 1 4 2c1.9 1.9 2 4.6 2 4.6-2.6 1.4-5.3.8-6-.6"/>
+                  </svg>
+                </div>
                 <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full" :class="roles.student.badgeClass">
                   Student
                 </span>
@@ -899,7 +909,14 @@
               class="clay-role-card flex flex-col justify-between"
             >
               <div class="flex items-start justify-between mb-3">
-                <span class="text-2xl">📚</span>
+                <div class="w-8 h-8 flex items-center justify-center">
+                  <svg class="w-7 h-7 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+                    <path d="M6 6h10"/>
+                    <path d="M6 10h10"/>
+                    <path d="M4 19.5a2.5 2.5 0 0 1 2.5-2.5H20"/>
+                  </svg>
+                </div>
                 <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full" :class="roles.instructor.badgeClass">
                   Faculty
                 </span>
@@ -919,7 +936,12 @@
               class="clay-role-card flex flex-col justify-between"
             >
               <div class="flex items-start justify-between mb-3">
-                <span class="text-2xl">💼</span>
+                <div class="w-8 h-8 flex items-center justify-center">
+                  <svg class="w-7 h-7 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                  </svg>
+                </div>
                 <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full" :class="roles.employer.badgeClass">
                   Employer
                 </span>
@@ -939,7 +961,11 @@
               class="clay-role-card flex flex-col justify-between"
             >
               <div class="flex items-start justify-between mb-3">
-                <span class="text-2xl">⚡</span>
+                <div class="w-8 h-8 flex items-center justify-center">
+                  <svg class="w-7 h-7 text-sky-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                  </svg>
+                </div>
                 <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full" :class="roles.admin.badgeClass">
                   Admin
                 </span>
@@ -1243,7 +1269,10 @@
 
           <!-- Status / Code Banner -->
           <div x-show="otpStatus === 'sent'" class="mb-6 p-4 rounded-3xl bg-emerald-100/80 border border-emerald-300 text-emerald-950 text-xs font-semibold flex items-center gap-3">
-            <span class="text-xl">📬</span>
+            <svg class="w-6 h-6 text-emerald-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="16" x="2" y="4" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
             <div>
               <div class="font-bold">Email dispatched successfully!</div>
               <div class="text-[11px] text-emerald-800">Please check your Gmail inbox and spam/junk folder for the 6-digit code.</div>
@@ -1253,7 +1282,11 @@
           <!-- Sandbox / Demo Notice when SMTP is not configured -->
           <div x-show="otpStatus === 'sandbox'" class="mb-6 p-4 rounded-3xl clay-cushion-yellow border border-amber-300/60 text-amber-950 text-xs flex flex-col md:flex-row items-center justify-between gap-3 shadow-sm">
             <div class="flex items-center gap-2.5">
-              <span class="text-xl">🔑</span>
+              <svg class="w-6 h-6 text-amber-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="7.5" cy="15.5" r="4.5"/>
+                <path d="m21 3-9.5 9.5"/>
+                <path d="m15.5 7.5 3 3"/>
+              </svg>
               <div>
                 <div class="font-extrabold text-sm">Test Code: <span class="text-rose-700 tracking-wider text-base font-black" x-text="generatedCode || '123456'"></span></div>
                 <div class="text-[11px] text-amber-800 font-medium">SMTP is not set up in .env yet. Click Auto-Fill to verify immediately, or configure Gmail SMTP.</div>
@@ -1359,7 +1392,7 @@
             class="clay-btn-pill-primary px-10 py-3.5 text-base"
             :disabled="isSubmitting"
           >
-            <span x-show="!isSubmitting">Launch <span class="capitalize" x-text="roles[role].title"></span> Dashboard 🚀</span>
+            <span x-show="!isSubmitting">Launch <span class="capitalize" x-text="roles[role].title"></span> Dashboard ➔</span>
             <span x-show="isSubmitting">Initializing Workspace...</span>
           </button>
         </div>
@@ -1371,8 +1404,11 @@
         
         <!-- "Why We Verify" Card in Warm Ivory Tray -->
         <div class="clay-tray p-6">
-          <div class="w-10 h-10 rounded-2xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold text-lg mb-4 shadow-sm">
-            🔒
+          <div class="w-10 h-10 rounded-2xl bg-purple-100 text-purple-800 flex items-center justify-center mb-4 shadow-sm">
+            <svg class="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
           </div>
           <h3 class="text-base font-extrabold text-nextit-ink mb-2">Why We Verify</h3>
           <p class="text-xs text-nextit-ink-secondary leading-relaxed mb-4 font-medium">
@@ -1429,7 +1465,10 @@
     <div @click.away="closeSmtpModal()" class="w-full max-w-md clay-card p-6 md:p-8 bg-[#FFFDF7] rounded-[32px] shadow-2xl space-y-4">
       <div class="flex items-center justify-between pb-2 border-b border-stone-200/60">
         <div class="flex items-center gap-2">
-          <span class="text-2xl">⚙️</span>
+          <svg class="w-6 h-6 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
           <h3 class="text-lg font-extrabold text-nextit-ink">Configure Gmail SMTP</h3>
         </div>
         <button @click="closeSmtpModal()" class="text-stone-400 hover:text-stone-700 text-xl font-bold p-1 leading-none">&times;</button>
@@ -1441,7 +1480,12 @@
 
       <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200/80 text-[11px] text-amber-900 space-y-1">
         <div class="font-bold flex items-center gap-1.5">
-          <span>💡</span> Google App Password Required:
+          <svg class="w-4 h-4 text-amber-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+            <path d="M9 18h6"/>
+            <path d="M10 22h4"/>
+          </svg>
+          Google App Password Required:
         </div>
         <ol class="list-decimal pl-4 space-y-0.5">
           <li>Ensure 2-Step Verification is turned ON in your Google Account.</li>

@@ -72,7 +72,7 @@
 
                 <!-- Bottom Status Pill -->
                 <HBox alignment="CENTER_LEFT" spacing="8" styleClass="login-trust-chip">
-                    <Label text="🟢" style="-fx-font-size: 10px;"/>
+                    <Region style="-fx-background-color: #10B981; -fx-background-radius: 999; -fx-min-width: 8; -fx-min-height: 8; -fx-max-width: 8; -fx-max-height: 8;"/>
                     <Label text="Encrypted Portal • Spring 2026 Academic Network" styleClass="login-trust-text"/>
                 </HBox>
             </VBox>
@@ -81,7 +81,7 @@
             <VBox styleClass="login-form-pane" prefWidth="540" maxWidth="560" spacing="14" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
                 <VBox spacing="3">
                     <Label text="Welcome Back" styleClass="login-form-title"/>
-                    <Label text="Sign in with your academic credentials or select a demo role." styleClass="login-form-subtitle"/>
+                    <Label text="Sign in with your academic credentials." styleClass="login-form-subtitle"/>
                 </VBox>
 
                 <VBox spacing="4">
@@ -114,64 +114,6 @@
                 </VBox>
 
                 <Label fx:id="errorLabel" styleClass="error-label" wrapText="true" alignment="CENTER" maxWidth="Infinity"/>
-
-                <!-- 1-Click Demo Profiles Section -->
-                <HBox alignment="CENTER" spacing="12" style="-fx-padding: 2 0;">
-                    <Region style="-fx-background-color: #E2DFE8; -fx-pref-height: 1;" HBox.hgrow="ALWAYS"/>
-                    <Label text="OR 1-CLICK INSTANT DEMO ACCESS" style="-fx-font-size: 10px; -fx-font-weight: 800; -fx-text-fill: #9C92A2; -fx-letter-spacing: 0.8px;"/>
-                    <Region style="-fx-background-color: #E2DFE8; -fx-pref-height: 1;" HBox.hgrow="ALWAYS"/>
-                </HBox>
-
-                <VBox spacing="8" styleClass="login-demo-grid">
-                    <HBox spacing="10">
-                        <Button onAction="#quickLoginAdmin" maxWidth="Infinity" styleClass="demo-card-btn" HBox.hgrow="ALWAYS">
-                            <graphic>
-                                <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <Label text="🛡️" style="-fx-font-size: 17px;"/>
-                                    <VBox spacing="1">
-                                        <Label text="System Admin" styleClass="demo-card-title"/>
-                                        <Label text="admin1 • kakonggg" styleClass="demo-card-sub"/>
-                                    </VBox>
-                                </HBox>
-                            </graphic>
-                        </Button>
-                        <Button onAction="#quickLoginInstructor" maxWidth="Infinity" styleClass="demo-card-btn" HBox.hgrow="ALWAYS">
-                            <graphic>
-                                <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <Label text="🧑‍🏫" style="-fx-font-size: 17px;"/>
-                                    <VBox spacing="1">
-                                        <Label text="Faculty Instructor" styleClass="demo-card-title"/>
-                                        <Label text="instructor1 • Maria" styleClass="demo-card-sub"/>
-                                    </VBox>
-                                </HBox>
-                            </graphic>
-                        </Button>
-                    </HBox>
-                    <HBox spacing="10">
-                        <Button onAction="#quickLoginStudent" maxWidth="Infinity" styleClass="demo-card-btn" HBox.hgrow="ALWAYS">
-                            <graphic>
-                                <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <Label text="🎓" style="-fx-font-size: 17px;"/>
-                                    <VBox spacing="1">
-                                        <Label text="Student Scholar" styleClass="demo-card-title"/>
-                                        <Label text="student1 • Alex Reyes" styleClass="demo-card-sub"/>
-                                    </VBox>
-                                </HBox>
-                            </graphic>
-                        </Button>
-                        <Button onAction="#quickLoginEmployer" maxWidth="Infinity" styleClass="demo-card-btn" HBox.hgrow="ALWAYS">
-                            <graphic>
-                                <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <Label text="🏢" style="-fx-font-size: 17px;"/>
-                                    <VBox spacing="1">
-                                        <Label text="Industry Partner" styleClass="demo-card-title"/>
-                                        <Label text="employer1 • TechCorp" styleClass="demo-card-sub"/>
-                                    </VBox>
-                                </HBox>
-                            </graphic>
-                        </Button>
-                    </HBox>
-                </VBox>
             </VBox>
         </HBox>
     </StackPane>

@@ -14,6 +14,7 @@
     <top>
         <HBox spacing="14" styleClass="app-header" alignment="CENTER_LEFT">
             <Button fx:id="toggleSidebarButton" text="◀" onAction="#toggleSidebar" styleClass="sidebar-toggle-btn" focusTraversable="false"/>
+            <Region style="-fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #C4B5FD, #818CF8); -fx-background-radius: 999; -fx-min-width: 28; -fx-min-height: 28; -fx-max-width: 28; -fx-max-height: 28;"/>
             <Label fx:id="headerLabel" text="NextIT" styleClass="app-header-title"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label fx:id="userLabel" styleClass="app-header-user"/>
@@ -25,7 +26,7 @@
                 <Insets top="16" right="8" bottom="16" left="16"/>
             </BorderPane.margin>
             <ScrollPane fx:id="sidebarScroll" fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="sidebar-scroll" VBox.vgrow="ALWAYS">
-                <VBox fx:id="sidebar" spacing="6" styleClass="sidebar-nav-list" maxHeight="Infinity"/>
+                <VBox fx:id="sidebar" spacing="3" styleClass="sidebar-nav-list" maxHeight="Infinity"/>
             </ScrollPane>
             <VBox fx:id="sidebarFooter" styleClass="sidebar-footer">
                 <Button fx:id="logoutButton" text="🚪 Logout" maxWidth="Infinity" styleClass="sidebar-button, sidebar-logout-button" onAction="#confirmAndLogout"/>
@@ -33,8 +34,6 @@
         </VBox>
     </left>
     <center>
-        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="content-scroll">
-            <BorderPane fx:id="contentPane" styleClass="content-area"/>
-        </ScrollPane>
+        <BorderPane fx:id="contentPane" styleClass="content-area"/>
     </center>
 </BorderPane>

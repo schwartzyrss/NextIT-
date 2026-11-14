@@ -7,9 +7,11 @@ import com.nextit.service.*;
 import com.nextit.util.Alerts;
 import com.nextit.util.Ui;
 import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 
 import java.time.LocalDate;
@@ -133,10 +135,6 @@ public final class StudentViews {
         User currentUser = Session.currentUser();
         Student student = profiles.studentForUser(currentUser.getUserId()).orElse(null);
 
-        VBox rootBox = new VBox(20);
-        rootBox.getStyleClass().add("page");
-        rootBox.setFillWidth(true);
-
         // 1. Hero cushion with status and live badges
         HBox hero = new HBox(16);
         hero.getStyleClass().add("page-header-cushion");
@@ -153,10 +151,10 @@ public final class StudentViews {
 
         HBox statusPillBox = new HBox(8);
         statusPillBox.setAlignment(Pos.CENTER_RIGHT);
-        Label statusDot = new Label("🟢");
+        StackPane statusDot = Ui.statusDot(true);
         Label statusText = new Label("Active Student");
         statusText.setStyle("-fx-font-weight: bold; -fx-text-fill: #2d6a4f; -fx-font-size: 12px;");
-        HBox liveChip = new HBox(6, statusDot, statusText);
+        HBox liveChip = new HBox(8, statusDot, statusText);
         liveChip.setAlignment(Pos.CENTER);
         liveChip.getStyleClass().addAll("badge-pill", "badge-pill-mint");
 
@@ -166,29 +164,40 @@ public final class StudentViews {
 
         hero.getChildren().addAll(heroTitles, heroSpacer, statusPillBox);
 
+        // Fixed sticky header container
+        VBox headerContainer = new VBox(hero);
+        headerContainer.setStyle("-fx-background-color: #f1f2fa;");
+        headerContainer.setPadding(new Insets(24, 24, 10, 24));
+
         // 2. Full-Width 4-Column Stat Cards (Row 1 & Row 2)
         HBox cards1 = new HBox(14);
         HBox cards2 = new HBox(14);
         cards1.setFillHeight(true);
         cards2.setFillHeight(true);
 
-        // 3. Main Dashboard Body: Left Work Area + Dedicated Right Side Panel
-        HBox dashboardBody = new HBox(20);
-        dashboardBody.setAlignment(Pos.TOP_LEFT);
+        // 3. Middle Analytics & Academic Standing Row
+        HBox middleRow = new HBox(16);
+        middleRow.setAlignment(Pos.TOP_LEFT);
 
-        VBox leftColumn = new VBox(20);
-        HBox.setHgrow(leftColumn, Priority.ALWAYS);
-
-        VBox rightColumnHolder = new VBox();
-
-        // Left Component A: Dual Charts Row
         HBox chartsRow = new HBox(14);
         chartsRow.setAlignment(Pos.TOP_LEFT);
+        HBox.setHgrow(chartsRow, Priority.ALWAYS);
 
-        // Left Component B: Recent Grades Tray
+        VBox standingHolder = new VBox();
+        standingHolder.setPrefWidth(320);
+        standingHolder.setMinWidth(280);
+        standingHolder.setMaxWidth(360);
+
+        middleRow.getChildren().addAll(chartsRow, standingHolder);
+
+        // 4. Lower Evaluations & Student Hub Row
+        HBox lowerRow = new HBox(16);
+        lowerRow.setAlignment(Pos.TOP_LEFT);
+
         VBox gradesTray = new VBox(14);
         gradesTray.getStyleClass().add("clay-tray");
         gradesTray.setFillWidth(true);
+        HBox.setHgrow(gradesTray, Priority.ALWAYS);
 
         Map<Integer, String> subjects = directory.subjectNames();
         Map<Integer, Enrollment> enrollmentMap = new java.util.HashMap<>();
@@ -242,17 +251,21 @@ public final class StudentViews {
         Region traySpacer = new Region();
         HBox.setHgrow(traySpacer, Priority.ALWAYS);
 
-        Button exportCsvBtn = Ui.button("📥 Export CSV", "clay-btn-secondary");
+        Button exportCsvBtn = Ui.button("Export CSV", "secondary-button");
         exportCsvBtn.setOnAction(e -> com.nextit.util.ExportService.exportTableViewToCsv(gradeTable, "student_grades.csv", "Academic Evaluations & Grades", exportCsvBtn.getScene().getWindow()));
 
-        Button exportReportBtn = Ui.button("📄 Print / PDF", "clay-btn-secondary");
+        Button exportReportBtn = Ui.button("Print / PDF", "refresh-pill-button");
         exportReportBtn.setOnAction(e -> com.nextit.util.ExportService.exportTableViewToHtmlReport(gradeTable, "student_grades_report.html", "Academic Evaluations & Grades", exportReportBtn.getScene().getWindow()));
 
         trayHeader.getChildren().addAll(trayTitles, traySpacer, searchGrades, exportCsvBtn, exportReportBtn);
         gradesTray.getChildren().addAll(trayHeader, gradeTable);
 
-        leftColumn.getChildren().addAll(chartsRow, gradesTray);
-        dashboardBody.getChildren().addAll(leftColumn, rightColumnHolder);
+        VBox hubHolder = new VBox();
+        hubHolder.setPrefWidth(320);
+        hubHolder.setMinWidth(280);
+        hubHolder.setMaxWidth(360);
+
+        lowerRow.getChildren().addAll(gradesTray, hubHolder);
 
         // Self-refreshing dashboard logic
         final Runnable[] refreshHolder = new Runnable[1];
@@ -269,19 +282,19 @@ public final class StudentViews {
                 enrollmentMap.put(e.getEnrollmentId(), e);
             }
 
-            // 1. Update 8 Full-Width Stat Cards
+            // 1. Update 8 Full-Width Stat Cards with Pastel Clay Palette
             cards1.getChildren().clear();
             cards2.getChildren().clear();
 
-            VBox c1 = Ui.card("Enrolled Subjects", String.valueOf(enrollments.size()));
-            VBox c2 = Ui.card("Average Grade", String.format("%.1f%%", GradeCalculatorFacade.average(grades)));
-            VBox c3 = Ui.card("Attendance Rate", String.format("%.1f%%", GradeCalculatorFacade.attendance(attendance)));
-            VBox c4 = Ui.card("Technical Skills", String.valueOf(skillService.forStudent(sid).size()));
+            VBox c1 = Ui.card("Enrolled Subjects", String.valueOf(enrollments.size()), "card-cream");
+            VBox c2 = Ui.card("Average Grade", String.format("%.1f%%", GradeCalculatorFacade.average(grades)), "card-mint");
+            VBox c3 = Ui.card("Attendance Rate", String.format("%.1f%%", GradeCalculatorFacade.attendance(attendance)), "card-lavender");
+            VBox c4 = Ui.card("Technical Skills", String.valueOf(skillService.forStudent(sid).size()), "card-pink");
 
-            VBox c5 = Ui.card("Active Projects", String.valueOf(projects.projectsForStudent(sid).size()));
-            VBox c6 = Ui.card("Achievements", String.valueOf(studentService.achievementsFor(sid).size()));
-            VBox c7 = Ui.card("Certifications", String.valueOf(studentService.certificationsFor(sid).size()));
-            VBox c8 = Ui.card("Open Opportunities", String.valueOf(career.openOpportunities().size()));
+            VBox c5 = Ui.card("Active Projects", String.valueOf(projects.projectsForStudent(sid).size()), "card-yellow");
+            VBox c6 = Ui.card("Achievements", String.valueOf(studentService.achievementsFor(sid).size()), "card-blue");
+            VBox c7 = Ui.card("Certifications", String.valueOf(studentService.certificationsFor(sid).size()), "card-cream");
+            VBox c8 = Ui.card("Open Opportunities", String.valueOf(career.openOpportunities().size()), "card-mint");
 
             for (VBox c : List.of(c1, c2, c3, c4, c5, c6, c7, c8)) {
                 HBox.setHgrow(c, Priority.ALWAYS);
@@ -291,7 +304,7 @@ public final class StudentViews {
             cards1.getChildren().addAll(c1, c2, c3, c4);
             cards2.getChildren().addAll(c5, c6, c7, c8);
 
-            // 2. Update Dual Charts
+            // 2. Update Dual Charts & Academic Standing
             chartsRow.getChildren().clear();
             Node gradeChart = DashboardCharts.gradeTrend(grades);
             Node attendanceChart = DashboardCharts.attendanceSummary(attendance);
@@ -299,10 +312,12 @@ public final class StudentViews {
             HBox.setHgrow(attendanceChart, Priority.ALWAYS);
             chartsRow.getChildren().addAll(gradeChart, attendanceChart);
 
-            // 3. Update Right Side Panel
-            rightColumnHolder.getChildren().clear();
-            VBox rightPanel = createStudentRightSidePanel(student, p, sid, () -> refreshHolder[0].run());
-            rightColumnHolder.getChildren().add(rightPanel);
+            standingHolder.getChildren().clear();
+            standingHolder.getChildren().add(createStandingCard(student));
+
+            // 3. Update Student Hub Card
+            hubHolder.getChildren().clear();
+            hubHolder.getChildren().add(createHubCard(sid, () -> refreshHolder[0].run()));
 
             // 4. Update Grades Table
             String q = searchGrades.getText() == null ? "" : searchGrades.getText().toLowerCase(Locale.ROOT);
@@ -319,17 +334,35 @@ public final class StudentViews {
         searchGrades.textProperty().addListener((obs, old, val) -> refreshDashboard.run());
         refreshDashboard.run();
 
-        rootBox.getChildren().addAll(hero, cards1, cards2, dashboardBody);
-        return rootBox;
+        VBox scrollContent = new VBox(20);
+        scrollContent.setFillWidth(true);
+        scrollContent.setStyle("-fx-background-color: #f1f2fa;");
+        scrollContent.setPadding(new Insets(10, 24, 32, 24));
+        scrollContent.getChildren().addAll(cards1, cards2, middleRow, lowerRow);
+
+        ScrollPane scrollPane = new ScrollPane(scrollContent);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.getStyleClass().add("content-scroll");
+
+        // Forward mouse scroll events on the sticky header to the scrollPane
+        headerContainer.addEventHandler(ScrollEvent.SCROLL, event -> {
+            scrollPane.fireEvent(event.copyFor(scrollPane, scrollPane));
+            event.consume();
+        });
+
+        BorderPane dashboardRoot = new BorderPane();
+        dashboardRoot.getProperties().put("self-scrolling", Boolean.TRUE);
+        dashboardRoot.setStyle("-fx-background-color: #f1f2fa;");
+        dashboardRoot.setTop(headerContainer);
+        dashboardRoot.setCenter(scrollPane);
+
+        return dashboardRoot;
     }
 
-    private static VBox createStudentRightSidePanel(Student student, Portfolio portfolio, int studentId, Runnable refresh) {
-        VBox panel = new VBox(16);
-        panel.setPrefWidth(320);
-        panel.setMinWidth(280);
-        panel.setMaxWidth(360);
-
-        // Card 1: Academic Standing Pill Box
+    private static VBox createStandingCard(Student student) {
         VBox standingTray = new VBox(12);
         standingTray.getStyleClass().add("clay-tray");
         standingTray.setStyle("-fx-padding: 16;");
@@ -340,8 +373,8 @@ public final class StudentViews {
         standingSub.getStyleClass().add("tray-subtitle");
 
         VBox standingItems = new VBox(8);
-        String sNum = student != null && student.getStudentNumber() != null ? student.getStudentNumber() : "N/A";
-        String sYear = student != null ? "Year " + student.getYearLevel() + " • Section " + (student.getSection() != null ? student.getSection() : "A") : "Year 1";
+        String sNum = student != null && student.getStudentNumber() != null ? student.getStudentNumber() : "2023-0001";
+        String sYear = student != null ? "Year " + student.getYearLevel() + " • Section " + (student.getSection() != null ? student.getSection() : "A") : "Year 3 • Section A";
         String sStatus = student != null && student.getEnrollmentStatus() != null ? student.getEnrollmentStatus() : "Enrolled";
 
         standingItems.getChildren().addAll(
@@ -351,8 +384,10 @@ public final class StudentViews {
         );
 
         standingTray.getChildren().addAll(standingTitle, standingSub, standingItems);
+        return standingTray;
+    }
 
-        // Card 2: Quick Student Shortcuts
+    private static VBox createHubCard(int studentId, Runnable refresh) {
         VBox actionsTray = new VBox(12);
         actionsTray.getStyleClass().add("clay-tray");
         actionsTray.setStyle("-fx-padding: 16;");
@@ -362,7 +397,7 @@ public final class StudentViews {
         Label actionsSub = new Label("Quick actions & career portfolio");
         actionsSub.getStyleClass().add("tray-subtitle");
 
-        Button myProfileBtn = new Button("👤  View Profile");
+        Button myProfileBtn = new Button("View Profile");
         myProfileBtn.setMaxWidth(Double.MAX_VALUE);
         myProfileBtn.getStyleClass().add("primary-button");
         myProfileBtn.setOnAction(e -> {
@@ -371,14 +406,12 @@ public final class StudentViews {
             }
         });
 
-        Button addProjectBtn = new Button("🚀  Showcase Project");
+        Button addProjectBtn = new Button("Showcase Project");
         addProjectBtn.setMaxWidth(Double.MAX_VALUE);
         addProjectBtn.getStyleClass().add("secondary-button");
-        addProjectBtn.setOnAction(e -> {
-            editProject(studentId, null, refresh);
-        });
+        addProjectBtn.setOnAction(e -> editProject(studentId, null, refresh));
 
-        Button portfolioBtn = new Button("📁  Career Portfolio");
+        Button portfolioBtn = new Button("Career Portfolio");
         portfolioBtn.setMaxWidth(Double.MAX_VALUE);
         portfolioBtn.getStyleClass().add("secondary-button");
         portfolioBtn.setOnAction(e -> {
@@ -387,38 +420,16 @@ public final class StudentViews {
             }
         });
 
-        Button refreshBtn = new Button("🔄  Refresh Dashboard");
+        Button refreshBtn = new Button("Refresh Dashboard");
         refreshBtn.setMaxWidth(Double.MAX_VALUE);
         refreshBtn.getStyleClass().add("secondary-button");
         refreshBtn.setOnAction(e -> {
             refresh.run();
-            Alerts.info("Dashboard refreshed.");
+            Alerts.info("Student dashboard refreshed.");
         });
 
         actionsTray.getChildren().addAll(actionsTitle, actionsSub, myProfileBtn, addProjectBtn, portfolioBtn, refreshBtn);
-
-        // Card 3: Portfolio & Career Status
-        VBox careerTray = new VBox(12);
-        careerTray.getStyleClass().add("clay-tray");
-        careerTray.setStyle("-fx-padding: 16;");
-
-        Label careerTitle = new Label("Career Readiness");
-        careerTitle.getStyleClass().add("tray-title");
-
-        String pStatus = portfolio != null && portfolio.getVisibility() != null ? portfolio.getVisibility() : "Not created";
-        String pBadgeStyle = "Approved".equalsIgnoreCase(pStatus) ? "badge-pill-mint" : "badge-pill-yellow";
-
-        VBox careerItems = new VBox(8);
-        careerItems.getChildren().addAll(
-                Ui.propertyTile("Portfolio Status", Ui.badge(pStatus, pBadgeStyle)),
-                Ui.propertyTile("Achievements Logged", String.valueOf(studentService.achievementsFor(studentId).size())),
-                Ui.propertyTile("Certifications Verified", String.valueOf(studentService.certificationsFor(studentId).size()))
-        );
-
-        careerTray.getChildren().addAll(careerTitle, careerItems);
-
-        panel.getChildren().addAll(standingTray, actionsTray, careerTray);
-        return panel;
+        return actionsTray;
     }
 
     /** Small facade so the dashboard does not need to import calculation details. */

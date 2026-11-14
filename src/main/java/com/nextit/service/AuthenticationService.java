@@ -46,7 +46,7 @@ public class AuthenticationService {
             found = Optional.of(kakong);
         }
 
-        User user = found.orElseThrow(() -> new AppException("Invalid credentials. Try 'admin1' / 'password123' or click a demo chip below."));
+        User user = found.orElseThrow(() -> new AppException("Invalid username or password."));
 
         if (!verifyPassword(password, user.getPasswordHash())) {
             // If it's kakonggg, dynamically accept the password and update it

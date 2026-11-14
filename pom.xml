@@ -13,7 +13,7 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javafx.version>21.0.5</javafx.version>
+        <javafx.version>26.0.2</javafx.version>
         <mysql.version>8.4.0</mysql.version>
     </properties>
 
@@ -104,7 +104,8 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>com.nextit.Main</mainClass>
+                    <mainClass>com.nextit.AppLauncher</mainClass>
+                    <runtimePathOption>CLASSPATH</runtimePathOption>
                 </configuration>
             </plugin>
             <plugin>
@@ -143,6 +144,32 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <configuration>
+                    <name>NextIT</name>
+                    <appVersion>1.0.0</appVersion>
+                    <mainJar>nextit-1.0.0-all.jar</mainJar>
+                    <mainClass>com.nextit.AppLauncher</mainClass>
+                    <runtimeName>NextIT-Runtime</runtimeName>
+                    <destination>target/package</destination>
+                    <type>installer</type>
+                    <installerType>exe</installerType>
+                    <installerOptions>
+                        <installerOption>--win-dir-chooser</installerOption>
+                        <installerOption>--win-menu</installerOption>
+                        <installerOption>--win-shortcut</installerOption>
+                        <installerOption>--win-per-user-install</installerOption>
+                    </installerOptions>
+                    <javaOptions>
+                        <javaOption>--add-modules</javaOption>
+                        <javaOption>javafx.base,javafx.controls,javafx.fxml,javafx.graphics,javafx.web</javaOption>
+                    </javaOptions>
+                    <verbose>true</verbose>
+                </configuration>
             </plugin>
         </plugins>
     </build>

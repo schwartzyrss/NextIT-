@@ -94,47 +94,12 @@ public class LoginController {
         javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/com/nextit/view/MainLayout.fxml"));
         javafx.scene.layout.BorderPane root = loader.load();
         AppController appController = loader.getController();
-        javafx.scene.Scene scene = new javafx.scene.Scene(root, 1100, 700);
-        scene.getStylesheets().add(getClass().getResource("/com/nextit/css/application.css").toExternalForm());
         Stage stage = (Stage) errorLabel.getScene().getWindow();
+        javafx.scene.Scene scene = new javafx.scene.Scene(root, stage.getWidth(), stage.getHeight());
+        scene.getStylesheets().add(getClass().getResource("/com/nextit/css/application.css").toExternalForm());
+        com.nextit.util.WindowBoundsManager.installDesktopEventFilters(scene);
         stage.setScene(scene);
         appController.initialize(stage, user);
-    }
-
-    @FXML
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private void quickLoginAdmin() {
-        usernameField.setText("admin1");
-        passwordField.setText("password123");
-        visiblePasswordField.setText("password123");
-        handleLogin();
-    }
-
-    @FXML
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private void quickLoginInstructor() {
-        usernameField.setText("instructor1");
-        passwordField.setText("password123");
-        visiblePasswordField.setText("password123");
-        handleLogin();
-    }
-
-    @FXML
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private void quickLoginStudent() {
-        usernameField.setText("student1");
-        passwordField.setText("password123");
-        visiblePasswordField.setText("password123");
-        handleLogin();
-    }
-
-    @FXML
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private void quickLoginEmployer() {
-        usernameField.setText("employer1");
-        passwordField.setText("password123");
-        visiblePasswordField.setText("password123");
-        handleLogin();
     }
 
     @FXML

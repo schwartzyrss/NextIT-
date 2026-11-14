@@ -82,6 +82,12 @@ public final class DatabaseConfig {
     private static Properties loadDotEnv() {
         Properties properties = new Properties();
         Path path = Path.of(".env");
+        if (!Files.isRegularFile(path)) {
+            path = Path.of("app", ".env");
+        }
+        if (!Files.isRegularFile(path)) {
+            path = Path.of(System.getProperty("user.dir"), ".env");
+        }
         if (!Files.isRegularFile(path)) return properties;
         try {
             for (String line : Files.readAllLines(path, StandardCharsets.UTF_8)) {

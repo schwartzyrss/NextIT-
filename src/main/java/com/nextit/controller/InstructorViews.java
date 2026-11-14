@@ -7,9 +7,11 @@ import com.nextit.service.*;
 import com.nextit.util.Alerts;
 import com.nextit.util.Ui;
 import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 
 import java.time.LocalDate;
@@ -342,10 +344,6 @@ public final class InstructorViews {
     }
 
     public static Node dashboard() {
-        VBox rootBox = new VBox(20);
-        rootBox.getStyleClass().add("page");
-        rootBox.setFillWidth(true);
-
         // 1. Hero cushion with status and live badges
         HBox hero = new HBox(16);
         hero.getStyleClass().add("page-header-cushion");
@@ -362,10 +360,10 @@ public final class InstructorViews {
 
         HBox statusPillBox = new HBox(8);
         statusPillBox.setAlignment(Pos.CENTER_RIGHT);
-        Label statusDot = new Label("🟢");
+        StackPane statusDot = Ui.statusDot(true);
         Label statusText = new Label("Faculty Portal Active");
         statusText.setStyle("-fx-font-weight: bold; -fx-text-fill: #2d6a4f; -fx-font-size: 12px;");
-        HBox liveChip = new HBox(6, statusDot, statusText);
+        HBox liveChip = new HBox(8, statusDot, statusText);
         liveChip.setAlignment(Pos.CENTER);
         liveChip.getStyleClass().addAll("badge-pill", "badge-pill-mint");
 
@@ -373,6 +371,11 @@ public final class InstructorViews {
         statusPillBox.getChildren().addAll(liveChip, termChip);
 
         hero.getChildren().addAll(heroTitles, heroSpacer, statusPillBox);
+
+        // Fixed sticky header container
+        VBox headerContainer = new VBox(hero);
+        headerContainer.setStyle("-fx-background-color: #f1f2fa;");
+        headerContainer.setPadding(new Insets(24, 24, 10, 24));
 
         // 2. Full-Width 4-Column Stat Cards (Row 1 & Row 2)
         HBox cards1 = new HBox(14);
@@ -537,8 +540,31 @@ public final class InstructorViews {
 
         refreshDashboard.run();
 
-        rootBox.getChildren().addAll(hero, cards1, cards2, dashboardBody);
-        return rootBox;
+        VBox scrollContent = new VBox(20);
+        scrollContent.setFillWidth(true);
+        scrollContent.setStyle("-fx-background-color: #f1f2fa;");
+        scrollContent.setPadding(new Insets(10, 24, 24, 24));
+        scrollContent.getChildren().addAll(cards1, cards2, dashboardBody);
+
+        ScrollPane scrollPane = new ScrollPane(scrollContent);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.getStyleClass().add("content-scroll");
+
+        // Forward mouse scroll events on the sticky header to the scrollPane
+        headerContainer.addEventHandler(ScrollEvent.SCROLL, event -> {
+            scrollPane.fireEvent(event.copyFor(scrollPane, scrollPane));
+            event.consume();
+        });
+
+        BorderPane dashboardRoot = new BorderPane();
+        dashboardRoot.getProperties().put("self-scrolling", Boolean.TRUE);
+        dashboardRoot.setStyle("-fx-background-color: #f1f2fa;");
+        dashboardRoot.setTop(headerContainer);
+        dashboardRoot.setCenter(scrollPane);
+        return dashboardRoot;
     }
 
     private static VBox createInstructorRightSidePanel(List<Attendance> allAttendance, List<Grade> allGrades,

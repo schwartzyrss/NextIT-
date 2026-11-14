@@ -95,17 +95,37 @@ public final class EmbeddedDatabaseManager {
     }
 
     private static void initializeSqlScript(String serverUrl, String fileName) throws SQLException {
+        String script = null;
         Path file = Path.of(System.getProperty("user.dir"), "database", fileName);
-        if (!Files.isRegularFile(file)) {
-            LOG.warn("Database script not found at {}", file.toAbsolutePath());
-            return;
+        if (Files.isRegularFile(file)) {
+            try {
+                script = Files.readString(file, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new SQLException("Unable to read " + file.toAbsolutePath(), e);
+            }
+        } else {
+            // Check app subfolder or classpath resource
+            Path appFile = Path.of(System.getProperty("user.dir"), "app", "database", fileName);
+            if (Files.isRegularFile(appFile)) {
+                try {
+                    script = Files.readString(appFile, StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    throw new SQLException("Unable to read " + appFile.toAbsolutePath(), e);
+                }
+            } else {
+                try (var is = EmbeddedDatabaseManager.class.getResourceAsStream("/database/" + fileName)) {
+                    if (is != null) {
+                        script = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                    }
+                } catch (IOException e) {
+                    throw new SQLException("Unable to read embedded resource /database/" + fileName, e);
+                }
+            }
         }
 
-        String script;
-        try {
-            script = Files.readString(file, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new SQLException("Unable to read " + file.toAbsolutePath(), e);
+        if (script == null) {
+            LOG.warn("Database script not found on disk or classpath: {}", fileName);
+            return;
         }
 
         try (Connection connection = DriverManager.getConnection(serverUrl + CONNECTION_PARAMETERS, "root", "");

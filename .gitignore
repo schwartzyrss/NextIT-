@@ -4,3 +4,7 @@
 target/
 *.log
 node_modules/
+
+target/
+dist/
+.env

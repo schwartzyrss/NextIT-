@@ -184,6 +184,35 @@ public final class ExportService {
         }
     }
 
+    /**
+     * Prints a TableView or node using the native Windows system print dialog.
+     */
+    public static boolean printTableView(TableView<?> tableView, String title, Window window) {
+        if (tableView == null || tableView.getItems() == null || tableView.getItems().isEmpty()) {
+            Alerts.warn("No data available to print.");
+            return false;
+        }
+
+        javafx.print.PrinterJob job = javafx.print.PrinterJob.createPrinterJob();
+        if (job == null) {
+            Alerts.warn("No printer found on this system. Please check your Windows printer settings.");
+            return false;
+        }
+
+        if (job.showPrintDialog(window)) {
+            boolean success = job.printPage(tableView);
+            if (success) {
+                job.endJob();
+                Alerts.info("Document sent to printer successfully.");
+                return true;
+            } else {
+                Alerts.error("Printing failed or was cancelled by the print spooler.");
+                return false;
+            }
+        }
+        return false;
+    }
+
     private static String escapeCsv(String input) {
         if (input == null) return "";
         String s = input.trim();

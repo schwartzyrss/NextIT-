@@ -11,16 +11,27 @@ import com.nextit.service.SkillService;
 import com.nextit.service.SystemService;
 import com.nextit.util.Alerts;
 import com.nextit.util.Ui;
+import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public final class AdminViews {
 
@@ -52,8 +63,7 @@ public final class AdminViews {
         badges.setAlignment(Pos.CENTER_LEFT);
         badges.getChildren().addAll(
                 Ui.badge("@" + account.getUsername(), "badge-pill-cream"),
-                Ui.badge(String.valueOf(account.getRole()), "badge-pill-pink"),
-                Ui.badge("Superuser", "badge-pill-mint")
+                Ui.badge(String.valueOf(account.getRole()), "badge-pill-pink")
         );
         identityDetails.getChildren().addAll(nameLabel, badges);
 
@@ -91,10 +101,6 @@ public final class AdminViews {
     }
 
     public static Node dashboard() {
-        VBox rootBox = new VBox(20);
-        rootBox.getStyleClass().add("page");
-        rootBox.setFillWidth(true);
-
         // 1. Hero cushion with status and live term badges
         HBox hero = new HBox(16);
         hero.getStyleClass().add("page-header-cushion");
@@ -111,10 +117,10 @@ public final class AdminViews {
 
         HBox statusPillBox = new HBox(8);
         statusPillBox.setAlignment(Pos.CENTER_RIGHT);
-        Label statusDot = new Label("🟢");
+        StackPane statusDot = Ui.statusDot(true);
         Label statusText = new Label("Systems Operational");
         statusText.setStyle("-fx-font-weight: bold; -fx-text-fill: #2d6a4f; -fx-font-size: 12px;");
-        HBox liveChip = new HBox(6, statusDot, statusText);
+        HBox liveChip = new HBox(8, statusDot, statusText);
         liveChip.setAlignment(Pos.CENTER);
         liveChip.getStyleClass().addAll("badge-pill", "badge-pill-mint");
 
@@ -122,6 +128,11 @@ public final class AdminViews {
         statusPillBox.getChildren().addAll(liveChip, termChip);
 
         hero.getChildren().addAll(heroTitles, heroSpacer, statusPillBox);
+
+        // Fixed sticky header container
+        VBox headerContainer = new VBox(hero);
+        headerContainer.setStyle("-fx-background-color: #f1f2fa;");
+        headerContainer.setPadding(new Insets(24, 24, 10, 24));
 
         // 2. Full-Width 4-Column Stat Cards
         HBox row1 = new HBox(14);
@@ -206,17 +217,17 @@ public final class AdminViews {
             row1.getChildren().clear();
             row2.getChildren().clear();
 
-            VBox cardUsers = Ui.card("Total Users", String.valueOf(admin.users().size()));
-            VBox cardStudents = Ui.card("Students", String.valueOf(admin.students().size()));
-            VBox cardInstructors = Ui.card("Instructors", String.valueOf(admin.instructors().size()));
-            VBox cardEmployers = Ui.card("Employers", String.valueOf(admin.employers().size()));
+            VBox cardUsers = Ui.card("Total Users", String.valueOf(admin.users().size()), "card-cream");
+            VBox cardStudents = Ui.card("Students", String.valueOf(admin.students().size()), "card-mint");
+            VBox cardInstructors = Ui.card("Instructors", String.valueOf(admin.instructors().size()), "card-lavender");
+            VBox cardEmployers = Ui.card("Employers", String.valueOf(admin.employers().size()), "card-pink");
 
-            VBox cardSubjects = Ui.card("Subjects", String.valueOf(admin.subjects().size()));
-            VBox cardSkills = Ui.card("Technical Skills", String.valueOf(skills.skills().size()));
-            VBox cardPortfolios = Ui.card("Portfolios", String.valueOf(portfolios.allPortfolios().size()));
+            VBox cardSubjects = Ui.card("Subjects", String.valueOf(admin.subjects().size()), "card-yellow");
+            VBox cardSkills = Ui.card("Technical Skills", String.valueOf(skills.skills().size()), "card-blue");
+            VBox cardPortfolios = Ui.card("Portfolios", String.valueOf(portfolios.allPortfolios().size()), "card-cream");
             long pending = portfolios.allPortfolios().stream()
                     .filter(p -> "Pending".equalsIgnoreCase(p.getVisibility())).count();
-            VBox cardPending = Ui.card("Pending Portfolios", String.valueOf(pending));
+            VBox cardPending = Ui.card("Pending Portfolios", String.valueOf(pending), "card-mint");
 
             for (VBox c : List.of(cardUsers, cardStudents, cardInstructors, cardEmployers,
                     cardSubjects, cardSkills, cardPortfolios, cardPending)) {
@@ -281,8 +292,54 @@ public final class AdminViews {
         // Initial populate
         refreshDashboard.run();
 
-        rootBox.getChildren().addAll(hero, row1, row2, dashboardBody);
-        return rootBox;
+        VBox scrollContent = new VBox(20);
+        scrollContent.setFillWidth(true);
+        scrollContent.setStyle("-fx-background-color: #f1f2fa;");
+        scrollContent.setPadding(new Insets(10, 24, 24, 24));
+        scrollContent.getChildren().addAll(row1, row2, dashboardBody);
+
+        ScrollPane scrollPane = new ScrollPane(scrollContent);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.getStyleClass().add("content-scroll");
+
+        // Forward mouse scroll events on the sticky header to the scrollPane
+        headerContainer.addEventHandler(ScrollEvent.SCROLL, event -> {
+            scrollPane.fireEvent(event.copyFor(scrollPane, scrollPane));
+            event.consume();
+        });
+
+        BorderPane dashboardRoot = new BorderPane();
+        dashboardRoot.getProperties().put("self-scrolling", Boolean.TRUE);
+        dashboardRoot.setStyle("-fx-background-color: #f1f2fa;");
+        dashboardRoot.setTop(headerContainer);
+        dashboardRoot.setCenter(scrollPane);
+
+        // Bind to real-time database connection monitoring and live data synchronization
+        Consumer<SystemService.DatabaseStatus> liveDashboardListener = dbStatus -> {
+            boolean connected = dbStatus.connected();
+            Ui.setStatusDot(statusDot, connected);
+            statusText.setText(connected ? "Systems Operational" : "Database Disconnected");
+            statusText.setStyle(connected
+                    ? "-fx-font-weight: bold; -fx-text-fill: #2d6a4f; -fx-font-size: 12px;"
+                    : "-fx-font-weight: bold; -fx-text-fill: #b3261e; -fx-font-size: 12px;");
+            liveChip.getStyleClass().setAll("badge-pill", connected ? "badge-pill-mint" : "badge-pill-pink");
+
+            if (connected) {
+                refreshHolder[0].run();
+            }
+        };
+
+        SystemService.getInstance().addListener(liveDashboardListener);
+        dashboardRoot.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null) {
+                SystemService.getInstance().removeListener(liveDashboardListener);
+            }
+        });
+
+        return dashboardRoot;
     }
 
     private static VBox createRightSidePanel(long pendingPortfolios, int totalSubjects, int totalEnrollments, Runnable refresh) {
@@ -299,22 +356,22 @@ public final class AdminViews {
         Label actSub = new Label("Instant administrative shortcuts");
         actSub.getStyleClass().add("tray-subtitle");
 
-        Button addUserBtn = new Button("👤  Add New User");
+        Button addUserBtn = new Button("Add New User");
         addUserBtn.setMaxWidth(Double.MAX_VALUE);
         addUserBtn.getStyleClass().add("primary-button");
         addUserBtn.setOnAction(e -> editUser(null, refresh));
 
-        Button assignProfBtn = new Button("👩‍🏫  Assign Professor");
+        Button assignProfBtn = new Button("Assign Professor");
         assignProfBtn.setMaxWidth(Double.MAX_VALUE);
         assignProfBtn.getStyleClass().add("secondary-button");
         assignProfBtn.setOnAction(e -> assignProfessorModal(null, refresh));
 
-        Button addSubjectBtn = new Button("📖  Create Subject");
+        Button addSubjectBtn = new Button("Create Subject");
         addSubjectBtn.setMaxWidth(Double.MAX_VALUE);
         addSubjectBtn.getStyleClass().add("secondary-button");
         addSubjectBtn.setOnAction(e -> editSubject(null, refresh));
 
-        Button refreshBtn = new Button("🔄  Refresh System Data");
+        Button refreshBtn = new Button("Refresh System Data");
         refreshBtn.setMaxWidth(Double.MAX_VALUE);
         refreshBtn.getStyleClass().add("secondary-button");
         refreshBtn.setOnAction(e -> {
@@ -1133,47 +1190,172 @@ public final class AdminViews {
     }
 
     public static Node system() {
-        SystemService system = new SystemService();
-        Label status = new Label();
-        status.setStyle("-fx-font-weight: bold;");
+        SystemService system = SystemService.getInstance();
+
+        // 1. Live Status Row components (pure text, flush-left aligned, zero unicode emoji prefix)
+        HBox statusRow = new HBox(10);
+        statusRow.setAlignment(Pos.CENTER_LEFT);
+
+        Label statusLabel = new Label("Connected");
+        statusLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #10B981; -fx-font-size: 13px; -fx-padding: 0;");
+
+        Label retryBadge = new Label("Retrying automatically...");
+        retryBadge.setStyle("-fx-background-color: rgba(239, 68, 68, 0.15); -fx-text-fill: #b3261e; -fx-background-radius: 999; -fx-padding: 2 10; -fx-font-size: 11px; -fx-font-weight: bold;");
+        retryBadge.setVisible(false);
+        retryBadge.setManaged(false);
+
+        Label timestampLabel = new Label("Live • Just now");
+        timestampLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #8e8394;");
+
+        statusRow.getChildren().addAll(statusLabel, retryBadge, timestampLabel);
+
+        // 2. Interactive manual controls (instantiated early for background sync pulse)
+        Button test = new Button("Test Connection");
+        test.getStyleClass().add("primary-button");
+
+        Button refreshButton = new Button("Refresh Counts");
+        StackPane refreshIcon = Ui.refreshIcon();
+        refreshButton.setGraphic(refreshIcon);
+        refreshButton.getStyleClass().add("refresh-pill-button");
+        Ui.RefreshIconController refreshController = new Ui.RefreshIconController(refreshButton, refreshIcon);
+
+        test.setOnAction(e -> {
+            test.setDisable(true);
+            refreshButton.setDisable(true);
+            test.setText("Testing...");
+            system.checkNow().whenComplete((res, err) -> Platform.runLater(() -> {
+                test.setDisable(false);
+                refreshButton.setDisable(false);
+                test.setText("Test Connection");
+            }));
+        });
+
+        refreshButton.setOnAction(e -> {
+            test.setDisable(true);
+            refreshButton.setDisable(true);
+            refreshController.startSpin();
+            system.checkNow().whenComplete((res, err) -> Platform.runLater(() -> {
+                test.setDisable(false);
+                refreshButton.setDisable(false);
+                refreshController.stopSpin();
+            }));
+        });
+
+        // 3. Details, Configuration, and Account
         Label detail = new Label();
         detail.setWrapText(true);
+        detail.getStyleClass().add("page-subtitle");
+
         Label url = new Label();
         url.setWrapText(true);
-        Label user = new Label();
-        detail.getStyleClass().add("page-subtitle");
         url.getStyleClass().add("page-subtitle");
+
+        Label user = new Label();
         user.getStyleClass().add("page-subtitle");
 
+        // 4. Row Counts Table Header & Table
+        Label staleBadge = Ui.badge("Stale (Offline)", "badge-pill-yellow");
+        staleBadge.setVisible(false);
+        staleBadge.setManaged(false);
+
+        HBox tableHeaderBox = new HBox(10, Ui.section("Database Row Counts"), staleBadge);
+        tableHeaderBox.setAlignment(Pos.CENTER_LEFT);
+
         TableView<SystemService.TableCount> table = Ui.table();
+        table.setPrefHeight(380);
         Ui.addColumn(table, "Table", SystemService.TableCount::table);
         Ui.addColumn(table, "Rows", t -> t.rows() < 0 ? "Unavailable" : String.valueOf(t.rows()));
 
-        Runnable refresh = () -> {
-            SystemService.DatabaseStatus current = system.status();
-            status.setText(current.connected() ? "Connected" : "Unavailable");
-            status.setStyle(current.connected()
-                    ? "-fx-font-weight: bold; -fx-text-fill: #1b7f3a;"
-                    : "-fx-font-weight: bold; -fx-text-fill: #b3261e;");
-            detail.setText(current.connected()
-                    ? "NextIT can reach the configured database and read its schema."
-                    : current.error());
+        // Keep last known counts to trigger a soft highlight flash on changes
+        final Map<String, Integer> lastSeenCounts = new HashMap<>();
+
+        // Live updater callback
+        Consumer<SystemService.DatabaseStatus> onUpdate = current -> {
+            boolean isConn = current.connected();
+            statusLabel.setText(isConn ? "Connected" : "Disconnected");
+            statusLabel.setStyle(isConn
+                    ? "-fx-font-weight: bold; -fx-text-fill: #10B981; -fx-font-size: 13px; -fx-padding: 0;"
+                    : "-fx-font-weight: bold; -fx-text-fill: #EF4444; -fx-font-size: 13px; -fx-padding: 0;");
+
+            retryBadge.setVisible(!isConn);
+            retryBadge.setManaged(!isConn);
+
+            if (isConn) {
+                if (current.lastCheckedAt() != null) {
+                    long sec = Duration.between(current.lastCheckedAt(), Instant.now()).getSeconds();
+                    timestampLabel.setText(sec <= 1 ? "Live • Updated just now" : "Live • Updated " + sec + "s ago");
+                }
+                detail.setText(current.details() != null ? current.details() : "NextIT can reach the configured database and read its schema.");
+                staleBadge.setVisible(false);
+                staleBadge.setManaged(false);
+                table.setOpacity(1.0);
+            } else {
+                timestampLabel.setText("Offline");
+                detail.setText(current.details() != null ? current.details() : "Connection refused or timed out. Check that MySQL is running.");
+                staleBadge.setVisible(true);
+                staleBadge.setManaged(true);
+                table.setOpacity(0.65);
+            }
+
             url.setText("JDBC URL: " + current.url());
             user.setText("Database user: " + current.user());
-            table.setItems(FXCollections.observableArrayList(current.tables()));
-        };
-        refresh.run();
 
-        Button test = new Button("Test Connection");
-        test.getStyleClass().add("primary-button");
-        test.setOnAction(e -> guard(refresh));
-        Button refreshButton = new Button("Refresh Counts");
-        refreshButton.setOnAction(e -> guard(refresh));
+            // Check if counts changed
+            boolean countsChanged = false;
+            for (SystemService.TableCount tc : current.tables()) {
+                Integer prev = lastSeenCounts.get(tc.table());
+                if (prev == null || !prev.equals(tc.rows())) {
+                    countsChanged = true;
+                    lastSeenCounts.put(tc.table(), tc.rows());
+                }
+            }
+
+            table.setItems(FXCollections.observableArrayList(current.tables()));
+
+            if (countsChanged && isConn) {
+                refreshController.pulseOnce();
+                FadeTransition ft = new FadeTransition(javafx.util.Duration.millis(300), table);
+                ft.setFromValue(0.75);
+                ft.setToValue(1.0);
+                ft.play();
+            }
+        };
+
+        // Register live listener with SystemService
+        system.addListener(onUpdate);
+
+        // Immediate fetch if current cached status available
+        SystemService.DatabaseStatus initial = system.status();
+        if (initial != null) {
+            onUpdate.accept(initial);
+        }
+
+        // Ticker to keep "Live • Updated Xs ago" fresh
+        Timeline ticker = new Timeline(new KeyFrame(javafx.util.Duration.seconds(1), ev -> {
+            SystemService.DatabaseStatus cur = system.getLatestStatus();
+            if (cur != null && cur.connected() && cur.lastCheckedAt() != null) {
+                long sec = Duration.between(cur.lastCheckedAt(), Instant.now()).getSeconds();
+                timestampLabel.setText(sec <= 1 ? "Live • Updated just now" : "Live • Updated " + sec + "s ago");
+            }
+        }));
+        ticker.setCycleCount(Animation.INDEFINITE);
+        ticker.play();
 
         Node summary = Ui.form(new String[]{"Status", "Details", "Configuration", "Account"},
-                new Node[]{status, detail, url, user});
-        return Ui.page("System Configuration", "Read-only diagnostics for the local database configuration. Credentials are loaded from the environment, JVM properties, or the optional .env file.",
-                Ui.toolbar(test, refreshButton), summary, Ui.section("Database Row Counts"), table);
+                new Node[]{statusRow, detail, url, user});
+
+        VBox page = Ui.page("System Configuration",
+                "Read-only diagnostics for the local database configuration. Credentials are loaded from the environment, JVM properties, or the optional .env file.",
+                Ui.toolbar(test, refreshButton), summary, tableHeaderBox, table);
+
+        page.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null) {
+                system.removeListener(onUpdate);
+                ticker.stop();
+            }
+        });
+
+        return page;
     }
 
     private static String value(String text) { return text == null ? "" : text; }
